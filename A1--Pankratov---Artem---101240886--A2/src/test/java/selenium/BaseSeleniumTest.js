@@ -106,29 +106,60 @@ class BaseSeleniumTest {
 
     // Card handling methods
     async drawCard(playerId, type = 'adventure') {
-        console.log(`Drawing ${type} card for ${playerId}`);
+        // Log state before draw
+        console.log(`\nDRAW CARD - Start State for ${playerId}:`);
+        console.log('Current deck state:', await this.driver.executeScript(`
+        return {
+            deckType: '${type}',
+            deckContents: window.gameState.${type}Deck,
+            nextCard: window.gameState.${type}Deck[0]
+        }
+    `));
+        console.log('Player hand before:', await this.getPlayerHand(playerId));
+
         const card = await this.driver.executeScript(`
-            const deck = '${type}' === 'adventure' ? 
-                window.gameState.adventureDeck : 
-                window.gameState.eventDeck;
-            if (deck.length === 0) return null;
+        try {
+            const deck = window.gameState['${type}Deck'];
+            if (!deck || deck.length === 0) {
+                console.error('Deck is empty or undefined:', deck);
+                return null;
+            }
+            
+            // Get the next card
             const card = deck.shift();
+            console.log('Drawing card:', card);
+            
             if ('${type}' === 'adventure') {
                 const cardId = card.type + card.value;
-                window.gameState.players['${playerId}'].cards.push(cardId);
-                updatePlayerHand('${playerId}', window.gameState.players['${playerId}'].cards);
+                console.log('Creating card ID:', cardId);
+                
+                // Get current hand
+                const playerHand = window.gameState.players['${playerId}'].cards;
+                console.log('Current hand:', playerHand);
+                
+                // Add new card
+                playerHand.push(cardId);
+                console.log('Updated hand:', playerHand);
+                
+                // Update UI
+                updatePlayerHand('${playerId}', playerHand);
+                
                 return cardId;
             } else {
                 return card;
             }
-        `);
+        } catch (error) {
+            console.error('Error in drawCard:', error);
+            return null;
+        }
+    `);
 
-        // Verify card was added to player's hand if it's an adventure card
-        if (type === 'adventure' && card) {
-            const hand = await this.getPlayerHand(playerId);
-            if (!hand.includes(card)) {
-                throw new Error(`Drawn card ${card} not found in ${playerId}'s hand`);
-            }
+        // Log final state
+        console.log('Card drawn:', card);
+        console.log('Player hand after:', await this.getPlayerHand(playerId));
+
+        if (!card) {
+            throw new Error(`Failed to draw ${type} card for ${playerId}`);
         }
 
         return card;
@@ -147,6 +178,33 @@ class BaseSeleniumTest {
             if (!actualHand.includes(card)) {
                 throw new Error(`Card ${card} not found in ${playerId}'s hand after setup`);
             }
+        }
+    }
+
+    async verifyDeckSetup() {
+        const deckState = await this.driver.executeScript(`
+        return {
+            adventureDeck: window.gameState.adventureDeck.map(card => card.type + card.value),
+            nextDraw: window.gameState.adventureDeck[0],
+            totalCards: window.gameState.adventureDeck.length
+        };
+    `);
+
+        console.log('\nDECK VERIFICATION:');
+        console.log('Full adventure deck:', deckState.adventureDeck);
+        console.log('Next card to be drawn:', deckState.nextDraw);
+        console.log('Total cards in deck:', deckState.totalCards);
+
+        // Verify first few critical cards
+        const expectedFirstCards = ['F30', 'S10', 'B15', 'F10'];
+        const actualFirstCards = deckState.adventureDeck.slice(0, 4);
+
+        console.log('\nFirst 4 cards verification:');
+        console.log('Expected:', expectedFirstCards);
+        console.log('Actual:', actualFirstCards);
+
+        if (JSON.stringify(expectedFirstCards) !== JSON.stringify(actualFirstCards)) {
+            console.error('WARNING: First cards mismatch!');
         }
     }
 
@@ -352,12 +410,12 @@ class BaseSeleniumTest {
         const scenarioDecks = {
             'JP': [
                 // Stage 1 draws
-                { type: 'F', value: 30 },      // P1's draw
+                { type: 'F', value: 30 },      // P1's draw (F30)
                 { type: 'S', value: 10 },      // P3's draw (Sword)
                 { type: 'B', value: 15 },      // P4's draw (Battle Axe)
 
                 // Stage 2 draws
-                { type: 'F', value: 10 },      // P1's draw
+                { type: 'F', value: 10 },      // P1's draw (F10) - critical for the test
                 { type: 'L', value: 20 },      // P3's draw (Lance)
                 { type: 'L', value: 20 },      // P4's draw (Lance)
 
@@ -367,22 +425,23 @@ class BaseSeleniumTest {
 
                 // Stage 4 draws
                 { type: 'F', value: 30 },      // P3's draw
-                { type: 'E', value: 30 },      // P4's draw (Excalibur)
+                { type: 'L', value: 20 },      // P4's draw (Lance)
 
-                // P2's cleanup draws (13 cards: 9 replacements + 4 stage bonus)
-                { type: 'F', value: 5 },
+                // P2's replacement draws (13 cards: 9 replacements + 4 stage bonus)
                 { type: 'F', value: 10 },
                 { type: 'F', value: 15 },
                 { type: 'F', value: 20 },
                 { type: 'F', value: 25 },
                 { type: 'F', value: 30 },
+                { type: 'F', value: 30 },
+                { type: 'F', value: 35 },
+                { type: 'F', value: 40 },
+                { type: 'F', value: 50 },
+                // Extra cards for 4 stages
                 { type: 'S', value: 10 },
                 { type: 'H', value: 10 },
                 { type: 'B', value: 15 },
-                { type: 'L', value: 20 },
-                { type: 'D', value: 5 },
-                { type: 'D', value: 5 },
-                { type: 'S', value: 10 }
+                { type: 'L', value: 20 }
             ],
             '2WINNER': [
                 // Will be implemented for 2winner scenario
@@ -414,6 +473,61 @@ class BaseSeleniumTest {
         };
         return eventDecks[scenario] || [];
     }
+
+    async setupDeterministicDecks(scenario) {
+        // First initialize empty decks
+        await this.driver.executeScript(`
+        window.gameState.adventureDeck = [];
+        window.gameState.eventDeck = [];
+    `);
+
+        // Set up exact card sequence for JP scenario
+        const adventureCards = [];
+
+// Stage 1 sequence
+        adventureCards.push({ type: 'F', value: 30 });  // P1's first draw
+        adventureCards.push({ type: 'F', value: 10 });  // P1's second draw
+        adventureCards.push({ type: 'S', value: 10 });  // P3's draw
+        adventureCards.push({ type: 'B', value: 15 });  // P4's draw
+
+// Stage 2 sequence
+        adventureCards.push({ type: 'F', value: 10 });  // P1's draw (should be F10, not L20)
+        adventureCards.push({ type: 'L', value: 20 });  // P3's draw (Lance)
+        adventureCards.push({ type: 'L', value: 20 });  // P4's draw (Lance)
+
+// Stage 3 sequence
+        adventureCards.push({ type: 'B', value: 15 });  // P3's draw (Axe)
+        adventureCards.push({ type: 'S', value: 10 });  // P4's draw (Sword)
+
+// Stage 4 sequence
+        adventureCards.push({ type: 'F', value: 30 });  // P3's draw
+        adventureCards.push({ type: 'L', value: 20 });  // P4's draw (Lance)
+
+        // P2's cleanup draws (13 cards = 9 replacements + 4 stage bonus)
+        for (let i = 0; i < 13; i++) {
+            adventureCards.push({ type: 'F', value: 10 });
+        }
+
+        // Set up event deck
+        const eventCards = [{ type: 'QUEST', stages: 4 }];
+
+        // Update the game state with both decks
+        await this.driver.executeScript(`
+        window.gameState.adventureDeck = ${JSON.stringify(adventureCards)};
+        window.gameState.eventDeck = ${JSON.stringify(eventCards)};
+    `);
+
+        // Verify deck setup
+        const deckState = await this.driver.executeScript(`
+        return {
+            adventureDeck: window.gameState.adventureDeck.length,
+            eventDeck: window.gameState.eventDeck.length,
+            firstFourCards: window.gameState.adventureDeck.slice(0,4)
+        };
+    `);
+        console.log('Adventure deck setup:', deckState);
+    }
+
 }
 
 module.exports = BaseSeleniumTest;

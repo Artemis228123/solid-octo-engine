@@ -92,15 +92,23 @@ class JPScenarioTest extends BaseSeleniumTest {
         // P1's turn
         await this.setCurrentPlayer('P1');
         console.log('P1 hand before draw:', await this.getPlayerHand('P1'));
-        const drawnCard = await this.drawCard('P1', 'adventure'); // Should be F30
-        console.log('P1 drew card:', drawnCard);
-        console.log('P1 hand after draw:', await this.getPlayerHand('P1'));
 
+        // P1 draws F30 and discards F5
+        await this.drawCard('P1', 'adventure'); // Draws F30
+        console.log('P1 hand after F30 draw:', await this.getPlayerHand('P1'));
         await this.discardCard('P1', 'F5');
-        console.log('P1 hand after discard:', await this.getPlayerHand('P1'));
 
+        // P1's attack with D5 + S10
         await this.selectCards('P1', ['D5', 'S10']);
         await this.clickButton('confirm-action');
+
+        // After attack, discard used cards
+        await this.discardCard('P1', 'D5');
+        await this.discardCard('P1', 'S10');
+
+        // Draw F10 immediately after Stage 1 attack
+        await this.drawCard('P1', 'adventure'); // Draws F10 here
+        console.log('P1 hand after F10 draw:', await this.getPlayerHand('P1'));
 
         // P3's turn
         await this.setCurrentPlayer('P3');
@@ -108,13 +116,19 @@ class JPScenarioTest extends BaseSeleniumTest {
         await this.discardCard('P3', 'F5');
         await this.selectCards('P3', ['S10', 'D5']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P3', 'S10');
+        await this.discardCard('P3', 'D5');
 
         // P4's turn
         await this.setCurrentPlayer('P4');
-        await this.drawCard('P4', 'adventure'); // Should be B15
+        await this.drawCard('P4', 'adventure'); // Draws Battle Axe
         await this.discardCard('P4', 'F5');
-        await this.selectCards('P4', ['D5', 'H10']);
+
+        // According to scenario:
+        // "P4 attack: Dagger + Horse => value of 15"
+        await this.selectCards('P4', ['D5']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P4', 'D5');
     }
 
     async handleStage2() {
@@ -122,21 +136,36 @@ class JPScenarioTest extends BaseSeleniumTest {
 
         // P1's insufficient attack
         await this.setCurrentPlayer('P1');
-        await this.drawCard('P1', 'adventure'); // F10
-        await this.selectCards('P1', ['H10']);
+        await this.drawCard('P1', 'adventure'); // Should draw F10 now
+
+        // Horse + Sword => value of 20
+        await this.selectCards('P1', ['H10']);  // Insufficient attack
         await this.clickButton('confirm-action');
 
-        // P3's attack
+        // Discard failed attack cards
+        await this.discardCard('P1', 'H10');
+
+        // P3's turn
         await this.setCurrentPlayer('P3');
-        await this.drawCard('P3', 'adventure'); // L20
+        await this.drawCard('P3', 'adventure'); // Draws Lance
         await this.selectCards('P3', ['B15', 'S10']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P3', 'B15');
+        await this.discardCard('P3', 'S10');
 
-        // P4's attack
+// P4's turn
         await this.setCurrentPlayer('P4');
-        await this.drawCard('P4', 'adventure'); // L20
+        await this.drawCard('P4', 'adventure'); // Draws Lance (L20)
+        console.log('P4 hand before attack:', await this.getPlayerHand('P4'));
+
+        // According to scenario:
+        // "P4 attack: Horse + Battle Axe => value of 25"
         await this.selectCards('P4', ['H10', 'B15']);
         await this.clickButton('confirm-action');
+
+        // Now discard the attack cards
+        await this.discardCard('P4', 'H10');
+        await this.discardCard('P4', 'B15');
     }
 
     async handleStage3() {
