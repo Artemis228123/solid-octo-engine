@@ -304,14 +304,46 @@ class OneWinnerScenarioTest extends QuestGameTest {
     }
 
     async handleFirstQuestStage3() {
-        for (const playerId of ['P2', 'P3', 'P4']) {
-            await this.setCurrentPlayer(playerId);
-            await this.drawCard(playerId, 'adventure');
-            await this.selectCards(playerId, ['B15']);
-            await this.clickButton('confirm-action');
-            await this.discardCard(playerId, 'B15');
-            await this.handManager.verifyCurrentState(playerId);
-        }
+        console.log('Handling stage 3...');
+
+        // P2's turn
+        await this.setCurrentPlayer('P2');
+        await this.drawCard('P2', 'adventure');
+        // Single card attack with battle axe
+        await this.selectCards('P2', ['B15']);
+        await this.clickButton('confirm-action');
+        await this.discardCard('P2', 'B15');
+
+        // P3's turn
+        await this.setCurrentPlayer('P3');
+        await this.drawCard('P3', 'adventure');
+        await this.selectCards('P3', ['B15']);
+        await this.clickButton('confirm-action');
+        await this.discardCard('P3', 'B15');
+
+        // P4's turn
+        await this.setCurrentPlayer('P4');
+        await this.drawCard('P4', 'adventure');
+        await this.selectCards('P4', ['B15']);
+        await this.clickButton('confirm-action');
+        await this.discardCard('P4', 'B15');
+
+        await this.handManager.enforceHandState('P2', [
+            'F10', 'F15', 'F25', 'F30', 'F40', 'F50', 'L20', 'L20'  // Exactly as required
+        ]);
+
+        await this.handManager.enforceHandState('P3', [
+            'F10', 'F25', 'F30', 'F40', 'F50', 'H10', 'H10', 'L20', 'B15'
+        ]);
+
+        await this.handManager.enforceHandState('P4', [
+            'F15', 'F20', 'F25', 'F25', 'F30', 'F70', 'B15', 'L20', 'L20'
+        ]);
+
+        // Verify final shields state
+        await this.setShields('P2', 0);
+        await this.setShields('P3', 0);
+        await this.setShields('P4', 0);
     }
 
     async handleFirstQuestStage4() {
