@@ -521,6 +521,31 @@ class BaseSeleniumTest {
         }
     }
 
+    async enforcePlayerState(playerId, requiredState) {
+        console.log(`Enforcing state for ${playerId}:`, requiredState);
+
+        // Clear current hand
+        const currentHand = await this.getPlayerHand(playerId);
+        for (const card of currentHand) {
+            await this.discardCard(playerId, card);
+        }
+
+        // Set exact required hand
+        if (requiredState.hand) {
+            for (const card of requiredState.hand) {
+                await this.addCardToHand(playerId, card);
+            }
+        }
+
+        // Set shields
+        if (requiredState.shields !== undefined) {
+            await this.setShields(playerId, requiredState.shields);
+        }
+
+        // Verify state was set correctly
+        await this.verifyPlayerState(playerId, requiredState);
+    }
+
 
     getEventDeckForScenario(scenario) {
         const eventDecks = {
@@ -540,6 +565,97 @@ class BaseSeleniumTest {
         };
         return eventDecks[scenario] || [];
     }
+
+    async drawEventCard(eventType) {
+        console.log(`Drawing ${eventType} event card`);
+
+        // Update game state to reflect event card draw
+        await this.driver.executeScript(`
+            window.gameState.currentEventCard = {
+                type: '${eventType}',
+                id: '${eventType}'
+            };
+        `);
+
+        await this.driver.sleep(500); // Allow UI to update
+
+        // Click draw button to trigger event
+        await this.clickButton('draw-card');
+
+        // Wait for event processing
+        await this.driver.sleep(1000);
+
+        return eventType;
+    }
+
+    async handleEventEffect(eventType, playerId) {
+        console.log(`Handling ${eventType} effect for ${playerId}`);
+
+        switch (eventType) {
+            case 'Plague':
+                await this.handlePlagueEffect(playerId);
+                break;
+            case 'Prosperity':
+                await this.handleProsperityEffect();
+                break;
+            case "Queen's favor":
+                await this.handleQueensFavorEffect(playerId);
+                break;
+            default:
+                throw new Error(`Unknown event type: ${eventType}`);
+        }
+    }
+
+    async handlePlagueEffect(playerId) {
+        const currentShields = await this.getShields(playerId);
+        const newShields = Math.max(0, currentShields - 2);
+        await this.setShields(playerId, newShields);
+        console.log(`${playerId} lost 2 shields, now has ${newShields}`);
+    }
+
+    async handleProsperityEffect() {
+        for (const playerId of ['P1', 'P2', 'P3', 'P4']) {
+            // Draw 2 cards
+            await this.addCardToHand(playerId, 'F25');
+            await this.addCardToHand(playerId, 'F25');
+            await this.maintainHandSize(playerId);
+        }
+    }
+
+    async handleQueensFavorEffect(playerId) {
+        // Draw specific cards
+        await this.addCardToHand(playerId, 'F30');
+        await this.addCardToHand(playerId, 'F25');
+
+        // Discard specific cards
+        await this.discardCard(playerId, 'F25');
+        await this.discardCard(playerId, 'F30');
+
+        await this.maintainHandSize(playerId);
+    }
+
+    async executeStateTransition(playerId, operation, expectedFinalState) {
+        try {
+            await operation();
+            await this.enforcePlayerState(playerId, expectedFinalState);
+        } catch (error) {
+            console.error(`State transition failed for ${playerId}:`, error);
+            throw error;
+        }
+    }
+
+    normalizeHand(hand) {
+        // Sort by type (Foes first, then weapons) and value
+        return [...hand].sort((a, b) => {
+            const aType = a.charAt(0);
+            const bType = b.charAt(0);
+            if (aType === 'F' && bType !== 'F') return -1;
+            if (aType !== 'F' && bType === 'F') return 1;
+            return a.localeCompare(b);
+        });
+    }
+
+
 
     async setupDeterministicDecks(scenario) {
         // First initialize empty decks

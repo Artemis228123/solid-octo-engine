@@ -42,6 +42,78 @@ public class GameRestController {
         }
     }
 
+    @PostMapping("/init-event-deck")
+
+    public ResponseEntity<?> initializeEventDeck(@RequestBody List<String> eventCards) {
+
+        try {
+
+// Clear existing event deck
+
+            game.getEventDeck().clearDeck();
+
+// Add specified event cards to the deck
+
+            for (String cardId : eventCards) {
+
+                EventCard eventCard = createEventCard(cardId);
+
+                game.getEventDeck().addCardToTop(eventCard);
+
+            }
+
+// Shuffle if necessary or keep the order
+
+            return ResponseEntity.ok("Event deck initialized successfully.");
+
+        } catch (Exception e) {
+
+            return ResponseEntity.badRequest().body(e.getMessage());
+
+        }
+
+    }
+
+    private EventCard createEventCard(String cardId) {
+
+        switch (cardId) {
+
+            case "Q2":
+
+                return new QuestCard(2);
+
+            case "Q3":
+
+                return new QuestCard(3);
+
+            case "Q4":
+
+                return new QuestCard(4);
+
+            case "Q5":
+
+                return new QuestCard(5);
+
+            case "EPlague":
+
+                return new EventActionCard(EventActionCard.EventType.PLAGUE);
+
+            case "EQueen":
+
+                return new EventActionCard(EventActionCard.EventType.QUEENS_FAVOR);
+
+            case "EProsperity":
+
+                return new EventActionCard(EventActionCard.EventType.PROSPERITY);
+
+            default:
+
+                throw new IllegalArgumentException("Unknown event card ID: " + cardId);
+
+        }
+
+    }
+
     @GetMapping("/game-state")
     public Map<String, Object> getGameState() {
         Map<String, Object> state = new HashMap<>();
