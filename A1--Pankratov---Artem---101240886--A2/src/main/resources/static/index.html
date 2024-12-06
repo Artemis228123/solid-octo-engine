@@ -43,7 +43,9 @@
         }
         .card.selected {
             background-color: #e0e0ff;
-            border-color: #0000ff;
+            border: 2px solid #0000ff;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .game-controls {
             margin: 20px 0;
@@ -145,6 +147,14 @@
 
 <script>
     window.gameState = {
+        debugState: function() {
+            console.log('Current game state:');
+            console.log('Current player:', this.currentPlayer);
+            for (const [player, data] of Object.entries(this.players)) {
+                console.log(`${player} hand:`, data.cards);
+            }
+            console.log('Selected cards:', this.selectedCards);
+        },
         currentPlayer: 'P1',
         phase: 'START',
         players: {
@@ -158,6 +168,13 @@
         currentStage: 0
     };
 
+    window.gameState.debug = {
+        logSelections: function() {
+            console.log('Current selections:', this.selectedCards);
+            console.log('Selected elements:', document.querySelectorAll('.card.selected'));
+        }
+    };
+
     function updatePlayerHand(playerId, cards) {
         const handElement = document.getElementById(`${playerId.toLowerCase()}-hand`);
         const cardCountElement = document.getElementById(`${playerId.toLowerCase()}-card-count`);
@@ -166,15 +183,22 @@
         handElement.innerHTML = '';
 
         // Add new cards
-        cards.forEach(card => {
+        cards.forEach((card, index) => {
             const cardElement = document.createElement('div');
             cardElement.className = 'card';
-            cardElement.textContent = card;
+            cardElement.textContent = card;  // Keep the text content as is
+
+            // Store card value as text content and data attribute
+            cardElement.setAttribute('data-card-value', card);
+            cardElement.setAttribute('data-card-index', index);
+
             cardElement.onclick = () => selectCard(cardElement, card);
             handElement.appendChild(cardElement);
         });
 
-        // Update card count
+        // Debug log the created hand
+        console.log(`Updated hand for ${playerId}:`, handElement.innerHTML);
+
         cardCountElement.textContent = cards.length;
     }
 
@@ -186,15 +210,28 @@
     }
 
     function selectCard(cardElement, card) {
-        cardElement.classList.toggle('selected');
-        const index = window.gameState.selectedCards.indexOf(card);
-        if (index === -1) {
+        console.log('Selecting card:', card);
+
+        // Don't toggle, just add if not already selected
+        if (!cardElement.classList.contains('selected')) {
+            cardElement.classList.add('selected');
             window.gameState.selectedCards.push(card);
-        } else {
-            window.gameState.selectedCards.splice(index, 1);
+            console.log('Added selection:', card);
+            console.log('Current selections:', window.gameState.selectedCards);
         }
+    }
+
+    function clearSelections() {
+        // Clear visual selections
+        document.querySelectorAll('.card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Clear selection array
+        window.gameState.selectedCards = [];
         updateSelectedCards();
     }
+
 
     function updateSelectedCards() {
         const selectedCardsDiv = document.getElementById('selected-cards');
@@ -215,9 +252,8 @@
     };
 
     document.getElementById('confirm-action').onclick = () => {
-        logMessage(`${window.gameState.currentPlayer} confirms action`);
-        window.gameState.selectedCards = [];
-        updateSelectedCards();
+        logMessage(`${window.gameState.currentPlayer} confirms action with cards: ${window.gameState.selectedCards.join(', ')}`);
+        clearSelections();
     };
 
     document.getElementById('decline-action').onclick = () => {

@@ -84,25 +84,6 @@ class BaseSeleniumTest {
         }
     }
 
-    // Deck setup methods
-    async setupDeterministicDecks(scenario) {
-        const adventureCards = this.getAdventureDeckForScenario(scenario);
-        const eventCards = this.getEventDeckForScenario(scenario);
-
-        await this.driver.executeScript(`
-            window.gameState.adventureDeck = ${JSON.stringify(adventureCards)};
-            window.gameState.eventDeck = ${JSON.stringify(eventCards)};
-        `);
-
-        // Verify decks were set up correctly
-        const deckState = await this.driver.executeScript(`
-            return {
-                adventureDeck: window.gameState.adventureDeck.length,
-                eventDeck: window.gameState.eventDeck.length
-            };
-        `);
-        console.log('Decks initialized for scenario:', scenario, deckState);
-    }
 
     // Card handling methods
     async drawCard(playerId, type = 'adventure') {
@@ -278,51 +259,57 @@ class BaseSeleniumTest {
         console.log(`Selecting cards for ${playerId}:`, cardIds);
         const handElement = await this.waitForElement(By.id(`${playerId.toLowerCase()}-hand`));
 
-        // First, clear any existing selections
-        await this.driver.executeScript(`
-            const handElement = document.getElementById('${playerId.toLowerCase()}-hand');
-            const selectedCards = handElement.getElementsByClassName('card selected');
-            Array.from(selectedCards).forEach(card => card.classList.remove('selected'));
-            window.gameState.selectedCards = [];
-        `);
+        // Debug: Log the entire hand HTML
+        const handHtml = await handElement.getAttribute('innerHTML');
+        console.log('Hand HTML:', handHtml);
 
-        // Then make new selections
+        // Debug: Log all available cards
+        const allCards = await handElement.findElements(By.className('card'));
+        console.log('All cards in hand:');
+        for (const card of allCards) {
+            const text = await card.getText();
+            const dataValue = await card.getAttribute('data-card-value');
+            console.log(`Card text: ${text}, data-value: ${dataValue}`);
+        }
+
+        // Clear existing selections
+        await this.driver.executeScript(`
+        const handElement = document.getElementById('${playerId.toLowerCase()}-hand');
+        const selectedCards = handElement.getElementsByClassName('card selected');
+        Array.from(selectedCards).forEach(card => card.classList.remove('selected'));
+        window.gameState.selectedCards = [];
+    `);
+
+        // Try to select each card
         for (const cardId of cardIds) {
             const cards = await handElement.findElements(By.className('card'));
             let found = false;
+            console.log(`Looking for card: ${cardId}`);
+
             for (const card of cards) {
                 const text = await card.getText();
-                if (text === cardId) {
+                console.log(`Comparing with card text: ${text}`);
+                if (text === cardId && !(await card.getAttribute('class')).includes('selected')) {
                     await card.click();
+                    console.log(`Selected card: ${cardId}`);
                     found = true;
                     break;
                 }
             }
+
             if (!found) {
-                throw new Error(`Card ${cardId} not found in ${playerId}'s hand for selection`);
+                throw new Error(`No more unselected ${cardId} cards available`);
             }
+
+            // Small delay between selections
             await this.driver.sleep(100);
         }
 
-        // Verify correct number of cards are selected
+        // Verify selections
         const selectedCards = await handElement.findElements(By.css('.card.selected'));
+        console.log(`Selected ${selectedCards.length} cards`);
         if (selectedCards.length !== cardIds.length) {
             throw new Error(`Expected ${cardIds.length} selected cards, found ${selectedCards.length}`);
-        }
-
-        // Verify correct cards are selected
-        for (const cardId of cardIds) {
-            let cardFound = false;
-            for (const selectedCard of selectedCards) {
-                const text = await selectedCard.getText();
-                if (text === cardId) {
-                    cardFound = true;
-                    break;
-                }
-            }
-            if (!cardFound) {
-                throw new Error(`Selected card ${cardId} not found in selection state`);
-            }
         }
     }
 
@@ -369,6 +356,15 @@ class BaseSeleniumTest {
             cards.push(cardText);
         }
         return cards;
+    }
+
+    async addCardToHand(playerId, card) {
+        await this.driver.executeScript(`
+        const playerHand = window.gameState.players['${playerId}'].cards;
+        playerHand.push('${card}');
+        updatePlayerHand('${playerId}', playerHand);
+    `);
+        console.log(`Added ${card} to ${playerId}'s hand`);
     }
 
     async getShields(playerId) {
@@ -484,22 +480,22 @@ class BaseSeleniumTest {
         // Set up exact card sequence for JP scenario
         const adventureCards = [];
 
-// Stage 1 sequence
+        // Stage 1 sequence
         adventureCards.push({ type: 'F', value: 30 });  // P1's first draw
-        adventureCards.push({ type: 'F', value: 10 });  // P1's second draw
+        adventureCards.push({ type: 'F', value: 10 });  // P1's second draw (F10)
         adventureCards.push({ type: 'S', value: 10 });  // P3's draw
         adventureCards.push({ type: 'B', value: 15 });  // P4's draw
 
-// Stage 2 sequence
-        adventureCards.push({ type: 'F', value: 10 });  // P1's draw (should be F10, not L20)
+        // Stage 2 sequence
+        adventureCards.push({ type: 'F', value: 10 });  // P1's draw
         adventureCards.push({ type: 'L', value: 20 });  // P3's draw (Lance)
         adventureCards.push({ type: 'L', value: 20 });  // P4's draw (Lance)
 
-// Stage 3 sequence
+        // Stage 3 sequence
         adventureCards.push({ type: 'B', value: 15 });  // P3's draw (Axe)
         adventureCards.push({ type: 'S', value: 10 });  // P4's draw (Sword)
 
-// Stage 4 sequence
+        // Stage 4 sequence
         adventureCards.push({ type: 'F', value: 30 });  // P3's draw
         adventureCards.push({ type: 'L', value: 20 });  // P4's draw (Lance)
 

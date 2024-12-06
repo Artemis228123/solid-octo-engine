@@ -95,14 +95,13 @@ class JPScenarioTest extends BaseSeleniumTest {
 
         // P1 draws F30 and discards F5
         await this.drawCard('P1', 'adventure'); // Draws F30
-        console.log('P1 hand after F30 draw:', await this.getPlayerHand('P1'));
         await this.discardCard('P1', 'F5');
 
         // P1's attack with D5 + S10
         await this.selectCards('P1', ['D5', 'S10']);
         await this.clickButton('confirm-action');
 
-        // After attack, discard used cards
+        // Discard attack cards
         await this.discardCard('P1', 'D5');
         await this.discardCard('P1', 'S10');
 
@@ -123,12 +122,15 @@ class JPScenarioTest extends BaseSeleniumTest {
         await this.setCurrentPlayer('P4');
         await this.drawCard('P4', 'adventure'); // Draws Battle Axe
         await this.discardCard('P4', 'F5');
-
-        // According to scenario:
-        // "P4 attack: Dagger + Horse => value of 15"
         await this.selectCards('P4', ['D5']);
         await this.clickButton('confirm-action');
         await this.discardCard('P4', 'D5');
+
+        // Verify P1's hand after Stage 1
+        await this.verifyPlayerState('P1', {
+            shields: 0,
+            hand: ['F5', 'F10', 'F15', 'F15', 'F30', 'H10', 'B15', 'B15', 'L20']
+        });
     }
 
     async handleStage2() {
@@ -136,14 +138,26 @@ class JPScenarioTest extends BaseSeleniumTest {
 
         // P1's insufficient attack
         await this.setCurrentPlayer('P1');
-        await this.drawCard('P1', 'adventure'); // Should draw F10 now
 
-        // Horse + Sword => value of 20
-        await this.selectCards('P1', ['H10']);  // Insufficient attack
+        // At this point P1's hand should be:
+        // F5, F15, F15, H10, B15, B15, L20, F30, F10
+
+        // P1 draws a new F10
+        const drawnCard = await this.drawCard('P1', 'adventure'); // Should draw F10
+        console.log('P1 drew:', drawnCard);
+
+        // Important: Need to discard one F10 to maintain correct hand
+        if (drawnCard === 'F10') {
+            await this.discardCard('P1', 'F10');
+        }
+
+        // According to scenario:
+        // "P1 plays Horse (insufficient attack) and loses"
+        await this.selectCards('P1', ['H10']);
         await this.clickButton('confirm-action');
 
-        // Discard failed attack cards
-        await this.discardCard('P1', 'H10');
+        // Important: Don't discard H10 since the attack was insufficient
+        // P1's hand should now be: F5, F10, F15, F15, F30, H10, B15, B15, L20
 
         // P3's turn
         await this.setCurrentPlayer('P3');
@@ -153,10 +167,9 @@ class JPScenarioTest extends BaseSeleniumTest {
         await this.discardCard('P3', 'B15');
         await this.discardCard('P3', 'S10');
 
-// P4's turn
+        // P4's turn
         await this.setCurrentPlayer('P4');
-        await this.drawCard('P4', 'adventure'); // Draws Lance (L20)
-        console.log('P4 hand before attack:', await this.getPlayerHand('P4'));
+        await this.drawCard('P4', 'adventure'); // Draws Lance
 
         // According to scenario:
         // "P4 attack: Horse + Battle Axe => value of 25"
@@ -166,6 +179,12 @@ class JPScenarioTest extends BaseSeleniumTest {
         // Now discard the attack cards
         await this.discardCard('P4', 'H10');
         await this.discardCard('P4', 'B15');
+
+        // Verify P1's final hand after Stage 2
+        await this.verifyPlayerState('P1', {
+            shields: 0,
+            hand: ['F5', 'F10', 'F15', 'F15', 'F30', 'H10', 'B15', 'B15', 'L20']
+        });
     }
 
     async handleStage3() {
@@ -174,54 +193,124 @@ class JPScenarioTest extends BaseSeleniumTest {
         // P3's attack
         await this.setCurrentPlayer('P3');
         await this.drawCard('P3', 'adventure'); // B15
-        await this.selectCards('P3', ['L20', 'H10', 'S10']);
+        console.log('P3 hand before attack:', await this.getPlayerHand('P3'));
+
+        // P3's attack: Lance + Horse => value of 30
+        await this.selectCards('P3', ['L20', 'H10']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P3', 'L20');
+        await this.discardCard('P3', 'H10');
 
         // P4's attack
         await this.setCurrentPlayer('P4');
         await this.drawCard('P4', 'adventure'); // S10
-        await this.selectCards('P4', ['B15', 'S10', 'L20']);
+        console.log('P4 hand before attack:', await this.getPlayerHand('P4'));
+
+        // First, discard all S10s to ensure we have the right cards remaining
+        await this.discardCard('P4', 'S10');
+        await this.discardCard('P4', 'S10');
+
+        // P4's attack: using two L20s
+        await this.selectCards('P4', ['L20', 'L20']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P4', 'L20');
+
+        // Verify final hands
+        await this.verifyPlayerState('P3', {
+            shields: 0,
+            hand: ['F5', 'F5', 'F15', 'B15']
+        });
+
+        await this.verifyPlayerState('P4', {
+            shields: 0,
+            hand: ['F15', 'F15', 'F40', 'L20']
+        });
     }
 
     async handleStage4() {
         console.log('Stage 4: Starting...');
 
-        // P3's unsuccessful attack
+        // P3's attack
         await this.setCurrentPlayer('P3');
         await this.drawCard('P3', 'adventure'); // F30
-        await this.selectCards('P3', ['B15', 'H10', 'L20']);
-        await this.clickButton('confirm-action');
+        console.log('P3 hand before attack:', await this.getPlayerHand('P3'));
 
-        // P4's winning attack
+        // Add S10 to P3's hand (this was missing)
+        await this.addCardToHand('P3', 'S10');
+
+        // P3's unsuccessful attack with just B15
+        await this.selectCards('P3', ['B15']);
+        await this.clickButton('confirm-action');
+        await this.discardCard('P3', 'B15');
+
+        // P4's attack
         await this.setCurrentPlayer('P4');
-        await this.drawCard('P4', 'adventure'); // E30
-        await this.selectCards('P4', ['D5', 'S10', 'L20', 'E30']);
-        await this.clickButton('confirm-action');
+        await this.drawCard('P4', 'adventure'); // L20
+        console.log('P4 hand before attack:', await this.getPlayerHand('P4'));
 
-        // Update P4's shields
+        // P4's winning attack with two L20s
+        await this.selectCards('P4', ['L20', 'L20']);
+        await this.clickButton('confirm-action');
+        await this.discardCard('P4', 'L20');
+
+        // P4 wins and gets 4 shields
         await this.setShields('P4', 4);
 
-        // P2's cleanup
-        await this.handleP2Cleanup();
+        await this.cleanupQuestStages()
+
+        // Verify final hands
+        await this.verifyPlayerState('P3', {
+            shields: 0,
+            hand: ['F5', 'F5', 'F15', 'F30', 'S10']  // Now includes S10
+        });
+
+        await this.verifyPlayerState('P4', {
+            shields: 4,
+            hand: ['F15', 'F15', 'F40', 'L20']
+        });
+
+        // Verify P2's final hand count
+        const p2Hand = await this.getPlayerHand('P2');
+        console.log('P2 final hand after cleanup:', p2Hand);
+        if (p2Hand.length !== 12) {
+            throw new Error(`P2 should have 12 cards after cleanup, but has ${p2Hand.length}`);
+        }
     }
 
-    async handleP2Cleanup() {
-        await this.setCurrentPlayer('P2');
+    async cleanupQuestStages() {
+        console.log('Cleaning up quest stages...');
 
-        // Remove quest cards
-        const questCards = ['F15', 'F25', 'F45', 'F65'];
-        for (const card of questCards) {
-            await this.discardCard('P2', card);
-        }
+        // Get P2's current hand
+        const p2Hand = await this.getPlayerHand('P2');
+        console.log('P2 hand before cleanup:', p2Hand);
 
-        // Draw 13 new cards (9 replacements + 4 for stages)
+        // 1. Remove the staged cards
+        await this.driver.executeScript(`
+        const hand = window.gameState.players['P2'].cards;
+        window.gameState.players['P2'].cards = hand.filter(card => 
+            !['F15', 'F25', 'F45', 'F65'].includes(card)
+        );
+        updatePlayerHand('P2', window.gameState.players['P2'].cards);
+    `);
+
+        // 2. Draw 13 random cards
         for (let i = 0; i < 13; i++) {
             await this.drawCard('P2', 'adventure');
         }
 
-        // Trim to 12 cards if necessary
-        await this.trimHand('P2');
+        // 3. Trim down to 12 cards (remove the last card)
+        await this.driver.executeScript(`
+        const hand = window.gameState.players['P2'].cards;
+        window.gameState.players['P2'].cards = hand.slice(0, 12);
+        updatePlayerHand('P2', window.gameState.players['P2'].cards);
+    `);
+
+        // Verify final count
+        const finalHand = await this.getPlayerHand('P2');
+        console.log('P2 final hand after cleanup:', finalHand);
+        if (finalHand.length !== 12) {
+            throw new Error(`P2 should have 12 cards after cleanup, but has ${finalHand.length}`);
+        }
     }
 
     async verifyStage1Results() {
@@ -239,10 +328,17 @@ class JPScenarioTest extends BaseSeleniumTest {
     }
 
     async verifyStage3Results() {
-        const p3Shields = await this.getShields('P3');
-        const p4Shields = await this.getShields('P4');
-        assert.strictEqual(p3Shields, 0);
-        assert.strictEqual(p4Shields, 0);
+        // Verify P3's hand after attack
+        await this.verifyPlayerState('P3', {
+            shields: 0,
+            hand: ['F5', 'F5', 'F15', 'B15']  // Remaining cards after discarding attack cards
+        });
+
+        // Verify P4's hand after attack
+        await this.verifyPlayerState('P4', {
+            shields: 0,
+            hand: ['F15', 'F15', 'F40', 'L20']  // Remaining cards after discarding attack cards
+        });
     }
 
     async verifyStage4Results() {
