@@ -137,30 +137,51 @@ class OneWinnerScenarioTest extends BaseSeleniumTest {
     }
 
     async handleP1QuestCleanup() {
-        const expectedFinalState = {
-            hand: [
-                'F15', 'F15', 'F15', 'F15',
-                'D5', 'D5', 'D5', 'D5'
-            ],
-            shields: 0
-        };
 
-        await this.executeStateTransition('P1',
-            async () => {
-                // Discard quest cards
-                const cardsToDiscard = ['F5', 'F10', 'F15', 'F20'];
-                for (const card of cardsToDiscard) {
-                    await this.discardCard('P1', card);
-                }
+// Discard 4 cards used in quest
 
-                // Draw 8 new cards
-                const newCards = ['F15', 'F15', 'F15', 'F15', 'D5', 'D5', 'D5', 'D5'];
-                for (const card of newCards) {
-                    await this.addCardToHand('P1', card);
-                }
-            },
-            expectedFinalState
-        );
+        const cardsUsed = ['F5', 'F10', 'F15', 'F20'];
+
+        for (const card of cardsUsed) {
+
+            await this.discardCard('P1', card);
+
+        }
+
+// Directly set P1's hand to match the scenario
+
+        const newHand = [
+
+            'F15', 'F15', // 2xF15
+
+            'F20', 'F20', 'F20', 'F20', // 4xF20
+
+            'F25', 'F25', // 2xF25
+
+            'F30', // 1xF30
+
+            'H10', // Horse
+
+            'B15', // Axe
+
+            'L20' // Lance
+
+        ];
+
+// Clear P1's current hand and set the new hand
+
+        await this.updatePlayerHand('P1', newHand);
+
+// Ensure P1 has 12 cards
+
+        const finalHand = await this.getPlayerHand('P1');
+
+        if (finalHand.length !== 12) {
+
+            throw new Error(`P1 should have 12 cards after cleanup, but has ${finalHand.length}`);
+
+        }
+
     }
 
     async handleEventSequence() {
@@ -321,13 +342,43 @@ class OneWinnerScenarioTest extends BaseSeleniumTest {
 
     async verifyAfterFirstQuest() {
         // Verify P1's exact state
-        await this.enforcePlayerState('P1', {
+        await this.verifyPlayerState('P1', {
+
             shields: 0,
-            hand: ['F15', 'F15', 'F15', 'F15', 'D5', 'D5', 'D5', 'D5']
+
+            hand: [
+
+                'F15', 'F15', // 2xF15
+
+                'F20', 'F20', 'F20', 'F20', // 4xF20
+
+                'F25', 'F25', // 2xF25
+
+                'F30', // 1xF30
+
+                'H10', // Horse
+
+                'B15', // Axe
+
+                'L20' // Lance
+
+            ]
+
+        });
+        await this.verifyPlayerState('P2', {
+
+            shields: 4, // P2 earns 4 shields from the first quest
+
+            hand: [
+
+                'F10', 'F15', 'F15', 'F25', 'F30', 'F40', 'F50', 'L20', 'L20'
+
+            ]
+
         });
 
         // Verify other players' shields
-        for (const playerId of ['P2', 'P3', 'P4']) {
+        for (const playerId of ['P3', 'P4']) {
             assert.strictEqual(
                 await this.getShields(playerId),
                 4,
@@ -340,7 +391,15 @@ class OneWinnerScenarioTest extends BaseSeleniumTest {
         // Verify P2's shields after Plague
         await this.verifyPlayerState('P2', {
             shields: 2,
-            hand: expect12Cards  // Define expected cards
+            hand: [
+
+                'F10', 'F15', 'F25', 'F30', 'F40',
+
+                'F50', 'H10', 'S10', 'B15', 'B15',
+
+                'L20', 'E30'
+
+            ]
         });
 
         // Verify all players have correct number of cards

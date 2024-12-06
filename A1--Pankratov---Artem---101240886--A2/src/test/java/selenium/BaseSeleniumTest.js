@@ -572,8 +572,8 @@ class BaseSeleniumTest {
         // Update game state to reflect event card draw
         await this.driver.executeScript(`
             window.gameState.currentEventCard = {
-                type: '${eventType}',
-                id: '${eventType}'
+                type: "${eventType}",
+                id: "${eventType}"
             };
         `);
 
