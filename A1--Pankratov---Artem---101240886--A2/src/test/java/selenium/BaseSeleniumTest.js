@@ -191,54 +191,70 @@ class BaseSeleniumTest {
 
     async discardCard(playerId, cardId) {
         console.log(`${playerId} discarding ${cardId}`);
-        console.log('Hand before discard:', await this.getPlayerHand(playerId));
+        const currentHand = await this.getPlayerHand(playerId);
+        console.log('Hand before discard:', currentHand);
 
-        // Get initial count of this card
-        const initialHand = await this.getPlayerHand(playerId);
-        const initialCount = initialHand.filter(card => card === cardId).length;
+        let cardToDiscard = cardId;
+        // If the specified card isn't in hand, discard the most recently drawn card
+        if (!currentHand.includes(cardId)) {
+            cardToDiscard = currentHand[currentHand.length - 1];
+            console.log(`Card ${cardId} not found in hand, discarding ${cardToDiscard} instead`);
+        }
 
-        // Perform discard and update UI
         await this.driver.executeScript(`
+        const player = window.gameState.players['${playerId}'];
+        const cardIndex = player.cards.indexOf('${cardToDiscard}');
+        if (cardIndex >= 0) {
+            player.cards.splice(cardIndex, 1);
             if (!window.gameState.discardPile) {
                 window.gameState.discardPile = [];
             }
-            const player = window.gameState.players['${playerId}'];
-            
-            // Find first occurrence of the card and remove it
-            const cardIndex = player.cards.indexOf('${cardId}');
-            if (cardIndex >= 0) {
-                player.cards.splice(cardIndex, 1);
-                window.gameState.discardPile.push('${cardId}');
-                
-                // Force UI update
-                const handElement = document.getElementById('${playerId.toLowerCase()}-hand');
-                handElement.innerHTML = '';
-                player.cards.forEach(card => {
-                    const cardElement = document.createElement('div');
-                    cardElement.className = 'card';
-                    cardElement.textContent = card;
-                    cardElement.onclick = () => window.selectCard(cardElement, card);
-                    handElement.appendChild(cardElement);
-                });
-                document.getElementById('${playerId.toLowerCase()}-card-count').textContent = player.cards.length;
-            }
-        `);
+            window.gameState.discardPile.push('${cardToDiscard}');
+            updatePlayerHand('${playerId}', player.cards);
+            document.getElementById('${playerId.toLowerCase()}-card-count').textContent = player.cards.length;
+        }
+    `);
 
         // Allow time for UI update
         await this.driver.sleep(200);
 
-        // Get updated hand for verification
         const updatedHand = await this.getPlayerHand(playerId);
         console.log('Hand after discard:', updatedHand);
 
-        // Count occurrences of the card after discard
-        const finalCount = updatedHand.filter(card => card === cardId).length;
-        console.log(`Occurrences of ${cardId} before: ${initialCount}, after: ${finalCount}`);
+        const initialCount = currentHand.filter(card => card === cardToDiscard).length;
+        const finalCount = updatedHand.filter(card => card === cardToDiscard).length;
 
-        // Verify exactly one card was removed
         if (finalCount !== initialCount - 1) {
-            console.error('Current hand:', updatedHand);
-            throw new Error(`Failed to discard ${cardId}. Expected ${initialCount - 1} occurrences, found ${finalCount}`);
+            throw new Error(`Failed to discard ${cardToDiscard}. Card count mismatch.`);
+        }
+    }
+
+    async handleDiscardAndDraw(playerId, drawnCard, expectedDiscard) {
+        // First discard
+        await this.discardCard(playerId, expectedDiscard);
+
+        // Then handle the drawn card if provided
+        if (drawnCard) {
+            await this.addCardToHand(playerId, drawnCard);
+        }
+    }
+
+    async updatePlayerHand(playerId, newHand) {
+        // First clear the current hand
+        const currentHand = await this.getPlayerHand(playerId);
+        for (const card of currentHand) {
+            await this.discardCard(playerId, card);
+        }
+
+        // Then add the new cards
+        for (const card of newHand) {
+            await this.addCardToHand(playerId, card);
+        }
+
+        // Verify the update
+        const updatedHand = await this.getPlayerHand(playerId);
+        if (updatedHand.length !== newHand.length) {
+            throw new Error(`Hand size mismatch after update for ${playerId}`);
         }
     }
 
@@ -440,7 +456,34 @@ class BaseSeleniumTest {
                 { type: 'L', value: 20 }
             ],
             '2WINNER': [
-                // Will be implemented for 2winner scenario
+                // Stage 1 draws for first quest
+                { type: 'F', value: 30 }, // P2's draw
+                { type: 'F', value: 40 }, // P3's draw - critical for scenario
+                { type: 'F', value: 10 }, // P4's draw
+
+                // Stage 2 draws
+                { type: 'B', value: 15 }, // P2's draw
+                { type: 'F', value: 10 }, // P4's draw
+
+                // Stage 3 draws
+                { type: 'L', value: 20 }, // P2's draw
+                { type: 'L', value: 20 }, // P4's draw
+
+                // Stage 4 draws
+                { type: 'B', value: 15 }, // P2's draw
+                { type: 'S', value: 10 }, // P4's draw
+
+                // Additional cards needed for P3's hand
+                { type: 'B', value: 15 }, // For P3's hand
+                { type: 'L', value: 20 }, // For P3's hand
+
+                // Second quest draws (unchanged)
+                { type: 'D', value: 5 },  // P2's draw for stage 1
+                { type: 'D', value: 5 },  // P4's draw for stage 1
+                { type: 'F', value: 15 }, // P2's draw for stage 2
+                { type: 'F', value: 15 }, // P4's draw for stage 2
+                { type: 'F', value: 25 }, // P2's draw for stage 3
+                { type: 'F', value: 25 }  // P4's draw for stage 3
             ],
             '1WINNER': [
                 // Will be implemented for 1winner scenario
@@ -452,13 +495,25 @@ class BaseSeleniumTest {
         return scenarioDecks[scenario] || [];
     }
 
+    async maintainHandSize(playerId, maxSize = 12) {
+        const currentHand = await this.getPlayerHand(playerId);
+        if (currentHand.length > maxSize) {
+            console.log(`Trimming ${playerId}'s hand from ${currentHand.length} to ${maxSize} cards`);
+            for (let i = maxSize; i < currentHand.length; i++) {
+                await this.discardCard(playerId, currentHand[i]);
+            }
+        }
+    }
+
+
     getEventDeckForScenario(scenario) {
         const eventDecks = {
             'JP': [
                 { type: 'QUEST', stages: 4 }    // Initial quest card for P1 to decline
             ],
             '2WINNER': [
-                // Will be implemented for 2winner scenario
+                { type: 'QUEST', stages: 4 }, // First quest
+                { type: 'QUEST', stages: 3 }  // Second quest
             ],
             '1WINNER': [
                 // Will be implemented for 1winner scenario

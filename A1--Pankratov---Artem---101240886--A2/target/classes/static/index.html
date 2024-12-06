@@ -43,7 +43,9 @@
         }
         .card.selected {
             background-color: #e0e0ff;
-            border-color: #0000ff;
+            border: 2px solid #0000ff;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .game-controls {
             margin: 20px 0;
@@ -82,7 +84,14 @@
         <div>Phase: <span id="game-phase">START</span></div>
     </div>
 
+    <div class="quest-status" style="margin: 10px 0;">
+        <div>Current Quest: <span id="current-quest">None</span></div>
+        <div>Quest Status: <span id="quest-status">Not started</span></div>
+        <div>Stage: <span id="current-stage">-</span></div>
+    </div>
+
     <div class="game-controls">
+        <button id="random-game" onclick="startRandomGame()">Start Random Game</button>
         <button id="draw-card">Draw Card</button>
         <button id="confirm-action">Confirm</button>
         <button id="decline-action">Decline</button>
@@ -140,11 +149,67 @@
         <div id="p4-hand" class="player-hand"></div>
     </div>
 
-    <div id="message-log" class="message-log"></div>
+    <div id="message-log" class="message-log" style="height: 200px; overflow-y: auto; background-color: #f5f5f5; padding: 10px; margin-top: 10px; font-family: monospace;">
+    </div>
 </div>
 
 <script>
     window.gameState = {
+        drawCard: async function(playerId, type) {
+            try {
+                const response = await fetch('/api/draw-card', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        playerId: playerId,
+                        cardType: type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to draw card');
+                }
+
+                const result = await response.json();
+                if (result.card) {
+                    // Update UI
+                    this.updatePlayerHand(playerId, result.gameState.players[playerId].cards);
+                    logMessage(`${playerId} drew ${result.card}`);
+                }
+                return result;
+            } catch (error) {
+                logMessage('Error drawing card: ' + error);
+                throw error;
+            }
+        },
+        debugState: function() {
+            console.log('Current game state:');
+            console.log('Current player:', this.currentPlayer);
+            for (const [player, data] of Object.entries(this.players)) {
+                console.log(`${player} hand:`, data.cards);
+            }
+            console.log('Selected cards:', this.selectedCards);
+        }, updateQuestInfo: function(questInfo) {
+            const questElement = document.getElementById('current-quest');
+            const questStatusElement = document.getElementById('quest-status');
+            const phaseElement = document.getElementById('game-phase');
+
+            if (questInfo.questCard) {
+                questElement.textContent = `Q${questInfo.questCard.stages}`;
+                questStatusElement.textContent = questInfo.status || 'In Progress';
+                logMessage(`Quest Q${questInfo.questCard.stages}: ${questInfo.status}`);
+            } else {
+                questElement.textContent = 'None';
+                questStatusElement.textContent = 'Waiting';
+            }
+
+            if (questInfo.phase) {
+                phaseElement.textContent = questInfo.phase;
+                logMessage(`Phase changed to: ${questInfo.phase}`);
+            }
+        },
         currentPlayer: 'P1',
         phase: 'START',
         players: {
@@ -158,6 +223,13 @@
         currentStage: 0
     };
 
+    window.gameState.debug = {
+        logSelections: function() {
+            console.log('Current selections:', this.selectedCards);
+            console.log('Selected elements:', document.querySelectorAll('.card.selected'));
+        }
+    };
+
     function updatePlayerHand(playerId, cards) {
         const handElement = document.getElementById(`${playerId.toLowerCase()}-hand`);
         const cardCountElement = document.getElementById(`${playerId.toLowerCase()}-card-count`);
@@ -166,15 +238,22 @@
         handElement.innerHTML = '';
 
         // Add new cards
-        cards.forEach(card => {
+        cards.forEach((card, index) => {
             const cardElement = document.createElement('div');
             cardElement.className = 'card';
-            cardElement.textContent = card;
+            cardElement.textContent = card;  // Keep the text content as is
+
+            // Store card value as text content and data attribute
+            cardElement.setAttribute('data-card-value', card);
+            cardElement.setAttribute('data-card-index', index);
+
             cardElement.onclick = () => selectCard(cardElement, card);
             handElement.appendChild(cardElement);
         });
 
-        // Update card count
+        // Debug log the created hand
+        console.log(`Updated hand for ${playerId}:`, handElement.innerHTML);
+
         cardCountElement.textContent = cards.length;
     }
 
@@ -185,16 +264,60 @@
         }
     }
 
-    function selectCard(cardElement, card) {
-        cardElement.classList.toggle('selected');
-        const index = window.gameState.selectedCards.indexOf(card);
-        if (index === -1) {
-            window.gameState.selectedCards.push(card);
-        } else {
-            window.gameState.selectedCards.splice(index, 1);
+    function updateGamePhase(phase) {
+        document.getElementById('game-phase').textContent = phase;
+        logMessage(`Phase changed to: ${phase}`);
+    }
+
+    function updateQuestStatus(questCard, status) {
+        document.getElementById('current-quest').textContent = questCard || 'None';
+        document.getElementById('quest-status').textContent = status;
+        logMessage(`Quest ${questCard}: ${status}`);
+    }
+
+    function updateStageProgress(stageNum, stageDetails) {
+        document.getElementById('current-stage').textContent = stageNum ? `Stage ${stageNum}` : '-';
+        if (stageDetails) {
+            logMessage(`Stage ${stageNum}: ${stageDetails}`);
         }
+    }
+
+    function selectCard(cardElement, card) {
+        console.log('Selecting card:', card);
+
+        // Don't toggle, just add if not already selected
+        if (!cardElement.classList.contains('selected')) {
+            cardElement.classList.add('selected');
+            window.gameState.selectedCards.push(card);
+            console.log('Added selection:', card);
+            console.log('Current selections:', window.gameState.selectedCards);
+        }
+    }
+
+    function clearSelections() {
+        // Clear visual selections
+        document.querySelectorAll('.card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Clear selection array
+        window.gameState.selectedCards = [];
         updateSelectedCards();
     }
+
+    async function startRandomGame() {
+        try {
+            const response = await fetch('/api/play-random-game', {
+                method: 'POST'
+            });
+            if (!response.ok) throw new Error('Failed to start random game');
+            updateUI(await response.json());
+            logMessage('Started new random game');
+        } catch (error) {
+            logMessage('Error: ' + error.message);
+        }
+    }
+
 
     function updateSelectedCards() {
         const selectedCardsDiv = document.getElementById('selected-cards');
@@ -204,20 +327,62 @@
     function logMessage(message) {
         const logElement = document.getElementById('message-log');
         const msgElement = document.createElement('div');
-        msgElement.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+        const timestamp = new Date().toLocaleTimeString();
+        msgElement.textContent = `[${timestamp}] ${message}`;
         logElement.appendChild(msgElement);
         logElement.scrollTop = logElement.scrollHeight;
     }
 
     // Button event listeners
-    document.getElementById('draw-card').onclick = () => {
-        logMessage(`${window.gameState.currentPlayer} draws a card`);
+    document.getElementById('draw-card').onclick = async () => {
+        try {
+            const response = await fetch('/api/draw-card', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    playerId: window.gameState.currentPlayer
+                })
+            });
+
+            const result = await response.json();
+            if (result.card) {
+                logMessage(`${window.gameState.currentPlayer} drew ${result.card}`);
+                updateUI(result.gameState);
+            }
+        } catch (error) {
+            logMessage('Error drawing card: ' + error);
+        }
+    };
+
+    document.getElementById('random-game').onclick = async () => {
+        try {
+            const response = await fetch('/api/start-random-game', {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to start random game');
+            }
+
+            const gameState = await response.json();
+            updateUI(gameState);
+            logMessage('Started new random game');
+
+            // Enable game controls
+            document.getElementById('draw-card').disabled = false;
+            document.getElementById('confirm-action').disabled = false;
+            document.getElementById('decline-action').disabled = false;
+            document.getElementById('end-turn').disabled = false;
+        } catch (error) {
+            logMessage('Error: ' + error.message);
+        }
     };
 
     document.getElementById('confirm-action').onclick = () => {
-        logMessage(`${window.gameState.currentPlayer} confirms action`);
-        window.gameState.selectedCards = [];
-        updateSelectedCards();
+        logMessage(`${window.gameState.currentPlayer} confirms action with cards: ${window.gameState.selectedCards.join(', ')}`);
+        clearSelections();
     };
 
     document.getElementById('decline-action').onclick = () => {
