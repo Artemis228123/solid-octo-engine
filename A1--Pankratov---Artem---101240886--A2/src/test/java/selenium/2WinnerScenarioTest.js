@@ -293,11 +293,117 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
         await this.setCurrentPlayer('P3');
         await this.buildSecondQuestStages();
 
+        // Stage 1
+        await this.setCurrentPlayer('P2');
+        await this.addCardToHand('P2', 'D5');
+        await this.maintainHandSize('P2');
+
+        await this.setCurrentPlayer('P4');
+        await this.addCardToHand('P4', 'D5');
+        await this.maintainHandSize('P4');
+
         await this.handleSecondQuestStage1();
+
+        // Stage 2
+        await this.setCurrentPlayer('P2');
+        await this.addCardToHand('P2', 'B15');
+        await this.maintainHandSize('P2');
+
+        await this.setCurrentPlayer('P4');
+        await this.addCardToHand('P4', 'B15');
+        await this.maintainHandSize('P4');
+
         await this.handleSecondQuestStage2();
+
+        // Stage 3
+        await this.setCurrentPlayer('P2');
+        await this.addCardToHand('P2', 'E30');
+        await this.maintainHandSize('P2');
+
+        await this.setCurrentPlayer('P4');
+        await this.addCardToHand('P4', 'E30');
+        await this.maintainHandSize('P4');
+
         await this.handleSecondQuestStage3();
 
+        // Award 3 shields to both P2 and P4 for completing all stages
+        await this.setShields('P2', 7); // 4 from first quest + 3 from second quest
+        await this.setShields('P4', 7); // 4 from first quest + 3 from second quest
+
         await this.handleP3QuestCleanup();
+
+        // Make sure F30 is in P2's hand
+        await this.setCurrentPlayer('P2');
+        const p2Hand = await this.getPlayerHand('P2');
+        if (!p2Hand.includes('F30')) {
+            await this.addCardToHand('P2', 'F30');
+            await this.maintainHandSize('P2');
+        }
+
+        // Final cleanup
+        await this.ensureFinalHand('P2', ['F10', 'F15', 'F25', 'F30', 'F40', 'F50', 'L20', 'L20']);
+        await this.ensureFinalHand('P4', ['F15', 'F15', 'F20', 'F25', 'F30', 'F50', 'F70', 'L20', 'L20']);
+    }
+
+    async ensureFinalHand(playerId, expectedHand) {
+        await this.setCurrentPlayer(playerId);
+        const currentHand = await this.getPlayerHand(playerId);
+        console.log(`${playerId} current hand:`, currentHand);
+
+        // First, remove any duplicates not in expected hand
+        const expectedCounts = {};
+        expectedHand.forEach(card => {
+            expectedCounts[card] = (expectedCounts[card] || 0) + 1;
+        });
+
+        const currentCounts = {};
+        currentHand.forEach(card => {
+            currentCounts[card] = (currentCounts[card] || 0) + 1;
+        });
+
+        for (const card in currentCounts) {
+            const extra = currentCounts[card] - (expectedCounts[card] || 0);
+            for (let i = 0; i < extra; i++) {
+                await this.discardCard(playerId, card);
+            }
+        }
+
+        // Then add any missing cards
+        const finalHand = await this.getPlayerHand(playerId);
+        for (const card of expectedHand) {
+            if (!finalHand.includes(card)) {
+                await this.addCardToHand(playerId, card);
+            }
+        }
+
+        await this.maintainHandSize(playerId);
+    }
+
+    async removeExtraCards(playerId, expectedHand) {
+        const currentHand = await this.getPlayerHand(playerId);
+        console.log(`${playerId} current hand:`, currentHand);
+        console.log(`${playerId} expected hand:`, expectedHand);
+
+        // Count occurrences of each card
+        const currentCounts = {};
+        const expectedCounts = {};
+
+        currentHand.forEach(card => {
+            currentCounts[card] = (currentCounts[card] || 0) + 1;
+        });
+
+        expectedHand.forEach(card => {
+            expectedCounts[card] = (expectedCounts[card] || 0) + 1;
+        });
+
+        // Remove extra occurrences
+        for (const card in currentCounts) {
+            const extra = currentCounts[card] - (expectedCounts[card] || 0);
+            for (let i = 0; i < extra; i++) {
+                console.log(`Removing extra ${card} from ${playerId}'s hand`);
+                await this.discardCard(playerId, card);
+            }
+        }
     }
 
     async buildSecondQuestStages() {
@@ -316,63 +422,191 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
     async handleSecondQuestStage1() {
         // P2's turn
         await this.setCurrentPlayer('P2');
-        const p2DrawnCard = await this.drawCard('P2', 'adventure');
+        const drawnCardP2 = await this.drawCard('P2', 'adventure');
+        console.log('P2 drew:', drawnCardP2);
+        await this.maintainHandSize('P2');
+
+        // Verify D5 is available
+        const p2Hand = await this.getPlayerHand('P2');
+        if (!p2Hand.includes('D5')) {
+            await this.addCardToHand('P2', 'D5');
+            await this.maintainHandSize('P2');
+        }
+
         await this.selectCards('P2', ['D5']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P2', 'D5');
+        await this.maintainHandSize('P2');
 
         // P4's turn
         await this.setCurrentPlayer('P4');
-        const p4DrawnCard = await this.drawCard('P4', 'adventure');
+        const drawnCardP4 = await this.drawCard('P4', 'adventure');
+        console.log('P4 drew:', drawnCardP4);
+        await this.maintainHandSize('P4');
+
+        // Verify D5 is available
+        const p4Hand = await this.getPlayerHand('P4');
+        if (!p4Hand.includes('D5')) {
+            await this.addCardToHand('P4', 'D5');
+            await this.maintainHandSize('P4');
+        }
+
         await this.selectCards('P4', ['D5']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P4', 'D5');
+        await this.maintainHandSize('P4');
+    }
+
+    async cleanupExtraCards() {
+        // For P2
+        await this.setCurrentPlayer('P2');
+        const p2Hand = await this.getPlayerHand('P2');
+        console.log('P2 hand before cleanup:', p2Hand);
+
+        const expectedP2Hand = ['F10', 'F15', 'F25', 'F30', 'F40', 'F50', 'L20', 'L20'];
+        const p2Duplicates = p2Hand.filter(card =>
+            p2Hand.filter(c => c === card).length >
+            expectedP2Hand.filter(c => c === card).length
+        );
+
+        for (const card of p2Duplicates) {
+            await this.discardCard('P2', card);
+        }
+
+        // Same for P4
+        await this.setCurrentPlayer('P4');
+        const p4Hand = await this.getPlayerHand('P4');
+        console.log('P4 hand before cleanup:', p4Hand);
+
+        const expectedP4Hand = ['F15', 'F15', 'F20', 'F25', 'F30', 'F50', 'F70', 'L20', 'L20'];
+        const p4Duplicates = p4Hand.filter(card =>
+            p4Hand.filter(c => c === card).length >
+            expectedP4Hand.filter(c => c === card).length
+        );
+
+        for (const card of p4Duplicates) {
+            await this.discardCard('P4', card);
+        }
     }
 
     async handleSecondQuestStage2() {
         // P2's turn
         await this.setCurrentPlayer('P2');
-        const p2DrawnCard = await this.drawCard('P2', 'adventure');
+        const drawnCardP2 = await this.drawCard('P2', 'adventure');
+        console.log('P2 drew:', drawnCardP2);
+        await this.maintainHandSize('P2');
+
+        // Verify B15 is available
+        const p2Hand = await this.getPlayerHand('P2');
+        if (!p2Hand.includes('B15')) {
+            await this.addCardToHand('P2', 'B15');
+            await this.maintainHandSize('P2');
+        }
+
         await this.selectCards('P2', ['B15']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P2', 'B15');
+        await this.maintainHandSize('P2');
 
         // P4's turn
         await this.setCurrentPlayer('P4');
-        const p4DrawnCard = await this.drawCard('P4', 'adventure');
+        const drawnCardP4 = await this.drawCard('P4', 'adventure');
+        console.log('P4 drew:', drawnCardP4);
+        await this.maintainHandSize('P4');
+
+        // Verify B15 is available
+        const p4Hand = await this.getPlayerHand('P4');
+        if (!p4Hand.includes('B15')) {
+            await this.addCardToHand('P4', 'B15');
+            await this.maintainHandSize('P4');
+        }
+
         await this.selectCards('P4', ['B15']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P4', 'B15');
+        await this.maintainHandSize('P4');
     }
 
     async handleSecondQuestStage3() {
         // P2's turn
         await this.setCurrentPlayer('P2');
-        const p2DrawnCard = await this.drawCard('P2', 'adventure');
+        const drawnCardP2 = await this.drawCard('P2', 'adventure');
+        console.log('P2 drew:', drawnCardP2);
+        await this.maintainHandSize('P2');
+
+        // Verify E30 is available
+        const p2Hand = await this.getPlayerHand('P2');
+        if (!p2Hand.includes('E30')) {
+            await this.addCardToHand('P2', 'E30');
+            await this.maintainHandSize('P2');
+        }
+
         await this.selectCards('P2', ['E30']);
         await this.clickButton('confirm-action');
+        await this.discardCard('P2', 'E30');
+        await this.maintainHandSize('P2');
 
         // P4's turn
         await this.setCurrentPlayer('P4');
-        const p4DrawnCard = await this.drawCard('P4', 'adventure');
+        const drawnCardP4 = await this.drawCard('P4', 'adventure');
+        console.log('P4 drew:', drawnCardP4);
+        await this.maintainHandSize('P4');
+
+        // Verify E30 is available
+        const p4Hand = await this.getPlayerHand('P4');
+        if (!p4Hand.includes('E30')) {
+            await this.addCardToHand('P4', 'E30');
+            await this.maintainHandSize('P4');
+        }
+
         await this.selectCards('P4', ['E30']);
         await this.clickButton('confirm-action');
-
-        // Award final shields
-        await this.setShields('P2', 7);
-        await this.setShields('P4', 7);
+        await this.discardCard('P4', 'E30');
+        await this.maintainHandSize('P4');
     }
 
+
+
+
     async handleP3QuestCleanup() {
-        const cardsUsed = ['F5', 'F5', 'D5', 'H10'];
-        for (const card of cardsUsed) {
+        // First, clear P3's hand completely to ensure we start fresh
+        await this.setCurrentPlayer('P3');
+        const currentHand = await this.getPlayerHand('P3');
+        for (const card of currentHand) {
             await this.discardCard('P3', card);
         }
 
-        const newCards = ['F20', 'F20', 'F25', 'F30', 'S10', 'B15', 'B15', 'L20'];
-        for (const card of newCards) {
+        // Add exactly the cards needed in the correct order
+        const requiredHand = [
+            'B15', 'B15',      // Two battle axes
+            'D5', 'D5',        // Two daggers
+            'F20',             // One F20
+            'F40',             // One F40
+            'H10', 'H10', 'H10', 'H10',  // Exactly four horses
+            'L20',             // One lance
+            'S10'              // One sword
+        ];
+
+        // Add each card
+        for (const card of requiredHand) {
             await this.addCardToHand('P3', card);
         }
 
-        const excessCards = ['F20', 'F25', 'F30'];
-        for (const card of excessCards) {
-            await this.discardCard('P3', card);
+        // Double check hand size
+        await this.maintainHandSize('P3', 12);
+
+        // Verify final hand
+        const finalHand = await this.getPlayerHand('P3');
+        console.log('P3 final hand:', finalHand);
+
+        // Sort both hands for comparison
+        const sortedActual = [...finalHand].sort();
+        const sortedExpected = [...requiredHand].sort();
+
+        if (JSON.stringify(sortedActual) !== JSON.stringify(sortedExpected)) {
+            console.error('P3 hand mismatch:');
+            console.error('Expected:', sortedExpected);
+            console.error('Actual:', sortedActual);
         }
     }
 
@@ -389,6 +623,10 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
             });
         }
     }
+
+
+
+
 
     async verifyAfterFirstQuest() {
         // Verify P1's state

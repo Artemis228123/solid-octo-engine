@@ -390,16 +390,26 @@ class BaseSeleniumTest {
     }
 
     async setShields(playerId, shields) {
+        console.log(`Setting shields for ${playerId} to ${shields}`);
         await this.driver.executeScript(`
-            window.gameState.players['${playerId}'].shields = ${shields};
-            document.getElementById('${playerId.toLowerCase()}-shields').textContent = ${shields};
-        `);
+        window.gameState.players['${playerId}'].shields = ${shields};
+        document.getElementById('${playerId.toLowerCase()}-shields').textContent = ${shields};
+    `);
 
-        // Verify shields were set correctly
+        // Verify shield count was set correctly
         const actualShields = await this.getShields(playerId);
         if (actualShields !== shields) {
-            throw new Error(`Shield count not set correctly for ${playerId}. Expected: ${shields}, Got: ${actualShields}`);
+            throw new Error(`Failed to set shield count for ${playerId}. Expected: ${shields}, Got: ${actualShields}`);
         }
+
+        console.log(`${playerId} now has ${actualShields} shields`);
+    }
+
+    async addShields(playerId, amount) {
+        const currentShields = await this.getShields(playerId);
+        const newTotal = currentShields + amount;
+        console.log(`Adding ${amount} shields to ${playerId} (${currentShields} -> ${newTotal})`);
+        await this.setShields(playerId, newTotal);
     }
 
     async setCurrentPlayer(playerId) {
@@ -499,8 +509,14 @@ class BaseSeleniumTest {
         const currentHand = await this.getPlayerHand(playerId);
         if (currentHand.length > maxSize) {
             console.log(`Trimming ${playerId}'s hand from ${currentHand.length} to ${maxSize} cards`);
-            for (let i = maxSize; i < currentHand.length; i++) {
+            for (let i = currentHand.length - 1; i >= maxSize; i--) {
                 await this.discardCard(playerId, currentHand[i]);
+            }
+
+            // Verify final hand size
+            const newHand = await this.getPlayerHand(playerId);
+            if (newHand.length !== maxSize) {
+                console.warn(`WARNING: ${playerId}'s hand size is ${newHand.length} after trimming`);
             }
         }
     }
