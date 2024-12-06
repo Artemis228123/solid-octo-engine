@@ -331,34 +331,42 @@ class BaseSeleniumTest {
 
     // State verification methods
     async verifyPlayerState(playerId, expectedState) {
-        console.log(`\nVerifying state for ${playerId}...`);
-
-        if (expectedState.shields !== undefined) {
-            const shieldElement = await this.waitForElement(By.id(`${playerId.toLowerCase()}-shields`));
-            const shields = await shieldElement.getText();
-            console.log(`${playerId} shields - Expected: ${expectedState.shields}, Got: ${shields}`);
-            if (parseInt(shields) !== expectedState.shields) {
-                throw new Error(`Shield count mismatch for ${playerId}. Expected: ${expectedState.shields}, Got: ${shields}`);
+        if (this.handManager) {
+            await this.handManager.enforceHandState(playerId, expectedState.hand);
+            if (expectedState.shields !== undefined) {
+                await this.setShields(playerId, expectedState.shields);
             }
-        }
+        } else {
+            // Legacy verification for tests not using HandManagementSystem
+            console.log(`\nVerifying state for ${playerId}...`);
 
-        if (expectedState.hand) {
-            const handElement = await this.waitForElement(By.id(`${playerId.toLowerCase()}-hand`));
-            const cardElements = await handElement.findElements(By.className('card'));
-            const actualHand = [];
-            for (const cardElement of cardElements) {
-                const cardText = await cardElement.getText();
-                actualHand.push(cardText);
+            if (expectedState.shields !== undefined) {
+                const shieldElement = await this.waitForElement(By.id(`${playerId.toLowerCase()}-shields`));
+                const shields = await shieldElement.getText();
+                console.log(`${playerId} shields - Expected: ${expectedState.shields}, Got: ${shields}`);
+                if (parseInt(shields) !== expectedState.shields) {
+                    throw new Error(`Shield count mismatch for ${playerId}. Expected: ${expectedState.shields}, Got: ${shields}`);
+                }
             }
 
-            console.log(`${playerId} current hand:`, actualHand);
-            console.log(`${playerId} expected hand:`, expectedState.hand);
+            if (expectedState.hand) {
+                const handElement = await this.waitForElement(By.id(`${playerId.toLowerCase()}-hand`));
+                const cardElements = await handElement.findElements(By.className('card'));
+                const actualHand = [];
+                for (const cardElement of cardElements) {
+                    const cardText = await cardElement.getText();
+                    actualHand.push(cardText);
+                }
 
-            const sortedExpected = [...expectedState.hand].sort();
-            const sortedActual = [...actualHand].sort();
+                console.log(`${playerId} current hand:`, actualHand);
+                console.log(`${playerId} expected hand:`, expectedState.hand);
 
-            if (JSON.stringify(sortedExpected) !== JSON.stringify(sortedActual)) {
-                throw new Error(`Hand mismatch for ${playerId}. Expected: ${sortedExpected}, Got: ${sortedActual}`);
+                const sortedExpected = [...expectedState.hand].sort();
+                const sortedActual = [...actualHand].sort();
+
+                if (JSON.stringify(sortedExpected) !== JSON.stringify(sortedActual)) {
+                    throw new Error(`Hand mismatch for ${playerId}. Expected: ${sortedExpected}, Got: ${sortedActual}`);
+                }
             }
         }
     }
