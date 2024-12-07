@@ -190,7 +190,7 @@ public class GameRestController {
                 game.discardAdventureCard(cardToRemove);
             }
 
-            // Draw new cards (used cards + stages)
+            // Draw new cards (used cards nd stages)
             int cardsToDraw = usedCards.size() + stages;
             for (int i = 0; i < cardsToDraw; i++) {
                 AdventureCard newCard = game.drawAdventureCard();
@@ -216,27 +216,27 @@ public class GameRestController {
     private void handleDrawAction(String playerId) {
         Player player = findPlayer(playerId);
         EventCard card = game.drawEventCard();
-        // Handle the drawn card based on its type
+
         if (card instanceof QuestCard) {
-            // Quest card handling
+
         } else if (card instanceof EventActionCard) {
-            // Event card handling
+
         }
     }
 
     private void handleCardSelection(String playerId, List<String> selectedCards) {
         Player player = findPlayer(playerId);
-        // Implement card selection logic
+
     }
 
     private void handleConfirmAction(String playerId) {
         Player player = findPlayer(playerId);
-        // Implement confirmation logic
+
     }
 
     private void handleDeclineAction(String playerId) {
         Player player = findPlayer(playerId);
-        // Implement decline logic
+
     }
 
     private void handleEndTurnAction() {

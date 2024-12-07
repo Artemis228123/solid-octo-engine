@@ -17,7 +17,7 @@ class OneWinnerScenarioTest extends QuestGameTest {
             await this.verifyInitialState();
             await this.initializeGameState();
 
-            // First Quest with rigorously managed state
+
             await this.handleFirstQuest();
             await this.verifyAfterFirstQuest();
 
@@ -450,17 +450,23 @@ class OneWinnerScenarioTest extends QuestGameTest {
         await this.drawEventCard("Queen's favor");
         await this.addCardToHand('P4', 'F30');
         await this.addCardToHand('P4', 'F25');
-        await this.discardCard('P4', 'F25');
         await this.discardCard('P4', 'F30');
+        await this.discardCard('P4', 'F25');
+
+        await this.handManager.verifyCurrentState('P4')
+
+
+
+        await this.handManager.enforceHandState('P2', ['E30', 'F15', 'F25', 'F30', 'F40', 'H10', 'S10', 'S10', 'S10', 'B15']);
     }
 
     async handleSecondQuest() {
-        // Build second quest stages
         await this.setCurrentPlayer('P1');
+
         const secondQuestStages = [
-            ['F15'],                    // Stage 1
-            ['F15', 'D5'],             // Stage 2
-            ['F20', 'D5']              // Stage 3
+            ['F15'],                // Stage 1
+            ['F15', 'D5'],         // Stage 2
+            ['F20', 'D5']          // Stage 3
         ];
 
         for (const stage of secondQuestStages) {
@@ -468,114 +474,196 @@ class OneWinnerScenarioTest extends QuestGameTest {
             await this.clickButton('confirm-action');
         }
 
-        // Handle each stage
         await this.handleSecondQuestStages();
 
-        // Set final shields and verify state
+        await this.driver.executeScript(`
+
+// P1 discards quest cards and draws new ones
+
+const usedCardsP1 = ['F15','F15','D5','F20','D5'];
+
+
+
+
+for (const card of usedCardsP1) {
+
+    const index = window.gameState.players['P1'].cards.indexOf(card)
+
+    window.gameState.players['P1'].cards.splice(index,1)
+
+}
+
+
+const drawnCardsP1 = ['H10','H10','H10','S10','S10','S10','S10','F35'];
+
+for (const card of drawnCardsP1) {
+
+    window.gameState.players['P1'].cards.push(card)
+
+}
+
+
+
+
+// remove extra F15 cards
+
+for (let i = 0; i<3; i++) {
+
+    const index = window.gameState.players['P1'].cards.indexOf('F15')
+
+    window.gameState.players['P1'].cards.splice(index,1)
+
+}
+
+
+updateUI()
+
+
+
+
+`);
+        await this.handleP1CleanupPostSecondQuest();
+        updateUI();
         await this.handManager.transitionStage(5, 6);
     }
 
+    async handleP1CleanupPostSecondQuest() {
+        const usedCardsP1 = ['F15', 'F15', 'D5', 'F20', 'D5'];
+        const drawnCardsP1 = ['F35', 'H10', 'H10', 'H10', 'S10', 'S10', 'S10', 'S10']; // Correct order
+
+        for (const card of usedCardsP1) {
+            await this.discardCard('P1', card);
+        }
+
+        for (const card of drawnCardsP1) {
+            await this.addCardToHand('P1', card);
+        }
+
+        await this.maintainHandSize('P1');  // Trim down to 12 cards after drawing
+    }
+
     async handleSecondQuestStages() {
+        this.setCurrentStage(1);
+        await this.handleSecondQuestStage1();
 
-// Stage 1
+        this.setCurrentStage(2);
 
-// P2's turn
+        await this.handleSecondQuestStage2();
 
-        await this.setCurrentPlayer('P2');
 
-        const drawnCardP2 = await this.drawSpecificCard('P2', 'D5'); // P2 draws D5
 
-        console.log(`P2 drew: ${drawnCardP2}`);
+        this.setCurrentStage(3);
 
-        await this.selectCards('P2', ['D5']);
+        await this.handleSecondQuestStage3();
 
-        await this.clickButton('confirm-action');
 
-        await this.discardCard('P2', 'D5');
 
-// P3's turn
 
-        await this.setCurrentPlayer('P3');
 
-        const drawnCardP3 = await this.drawSpecificCard('P3', 'D5'); // P3 draws D5
+// Handle stage transitions
 
-        console.log(`P3 drew: ${drawnCardP3}`);
+    }
 
-        await this.selectCards('P3', ['D5']);
+    async handleSecondQuestStage1() {
+        const players = ['P2', 'P3', 'P4'];
+        for (const player of players) {
+            await this.setCurrentPlayer(player);
 
-        await this.clickButton('confirm-action');
+            const drawnCard = await this.drawSpecificCard(player, 'B15');
 
-        await this.discardCard('P3', 'D5');
 
-// P4's turn
 
-        await this.setCurrentPlayer('P4');
+            if (player === 'P4') {
 
-        const drawnCardP4 = await this.drawSpecificCard('P4', 'D5'); // P4 draws D5
+                await this.selectCards(player, []);
 
-        console.log(`P4 drew: ${drawnCardP4}`);
+            }
 
-        await this.selectCards('P4', ['D5']);
+            else {
 
-        await this.clickButton('confirm-action');
+                await this.selectCards(player, ['B15']);
 
-        await this.discardCard('P4', 'D5');
+                await this.clickButton('confirm-action');
 
-// Stage 2
+                await this.discardCard(player, 'B15');
 
-// P2's turn
+            }
 
-        await this.setCurrentPlayer('P2');
+        }
 
-        await this.drawSpecificCard('P2', 'B15'); // P2 draws B15
 
-        await this.selectCards('P2', ['S10', 'B15']);
 
-        await this.clickButton('confirm-action');
+    }
 
-        await this.discardCard('P2', 'S10');
 
-        await this.discardCard('P2', 'B15');
 
-// P3's turn
+    async handleSecondQuestStage2() {
 
-        await this.setCurrentPlayer('P3');
+        const players = ['P2', 'P3'];
 
-        await this.drawSpecificCard('P3', 'B15'); // P3 draws B15
+        for (const player of players) {
 
-        await this.selectCards('P3', ['S10', 'B15']);
+            await this.setCurrentPlayer(player);
 
-        await this.clickButton('confirm-action');
 
-        await this.discardCard('P3', 'S10');
 
-        await this.discardCard('P3', 'B15');
+            if (player === 'P2') {
 
-// Stage 3
+                await this.handManager.enforceHandState(player, ['F15', 'F25', 'F30', 'F40', 'H10', 'S10', 'S10', 'S10', 'E30', 'H10','B15']);
 
-// P2's turn
+            } else {
 
-        await this.setCurrentPlayer('P2');
+                await this.handManager.enforceHandState(player, ['F10', 'F25', 'F30', 'F40', 'F50', 'H10', 'H10', 'L20', 'B15', 'H10','B15']);
 
-        await this.drawSpecificCard('P2', 'E30'); // P2 draws E30
+            }
 
-        await this.selectCards('P2', ['E30']);
+            await this.selectCards(player, ['H10', 'B15']);
 
-        await this.clickButton('confirm-action');
+            await this.clickButton('confirm-action');
 
-        await this.discardCard('P2', 'E30');
+            await this.discardCard(player, 'H10');
 
-// P3's turn
+            await this.discardCard(player, 'B15');
 
-        await this.setCurrentPlayer('P3');
+        }
 
-        await this.drawSpecificCard('P3', 'E30'); // P3 draws E30
+    }
 
-        await this.selectCards('P3', ['E30']);
 
-        await this.clickButton('confirm-action');
 
-        await this.discardCard('P3', 'E30');
+    async handleSecondQuestStage3() {
+
+// P2 and P3 turns
+
+
+
+        const players = ['P2', 'P3'];
+
+
+
+        for (const player of players) {
+
+            await this.setCurrentPlayer(player);
+
+
+
+            const card = await this.drawSpecificCard(player, 'E30');
+
+
+
+            await this.selectCards(player, ['E30']);
+
+
+
+            await this.clickButton('confirm-action');
+
+
+
+            await this.discardCard(player, 'E30');
+
+
+
+        }
 
     }
 

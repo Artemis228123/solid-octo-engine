@@ -87,7 +87,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
     }
 
     async handleFirstQuestStage1() {
-        // P2's turn (unchanged)
+        // P2's turn
         await this.setCurrentPlayer('P2');
         const p2DrawnCard = await this.drawCard('P2', 'adventure');
         await this.discardCard('P2', p2DrawnCard);
@@ -95,27 +95,27 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
         await this.clickButton('confirm-action');
         await this.discardCard('P2', 'H10');
 
-        // P3's turn - Ensure F40 is drawn and kept
+        // P3's turn
         await this.setCurrentPlayer('P3');
 
-        // Clear specific cards we don't want
+
         await this.discardCard('P3', 'F5'); // Remove two F5s, keeping two
         await this.discardCard('P3', 'F5');
         await this.discardCard('P3', 'D5'); // Remove one D5, keeping two
 
-        // Draw F40 and ensure it's kept
+        // Draw F40
         const drawnCard = await this.drawCard('P3', 'adventure');
         if (drawnCard !== 'F40') {
             console.error(`ERROR: Expected P3 to draw F40, but drew ${drawnCard}`);
-            // Force the correct card if needed
+
             await this.addCardToHand('P3', 'F40');
         }
 
-        // Add remaining required cards
+
         await this.addCardToHand('P3', 'B15');
         await this.addCardToHand('P3', 'L20');
 
-        // Ensure hand has exactly 12 cards with the right composition
+
         const expectedP3Hand = [
             'F5', 'F5', 'F40',
             'D5', 'D5', 'H10',
@@ -130,7 +130,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
             await this.discardCard('P3', card);
         }
 
-        // Add any missing cards
+
         for (const card of expectedP3Hand) {
             const count = currentHand.filter(c => c === card).length;
             const expectedCount = expectedP3Hand.filter(c => c === card).length;
@@ -139,7 +139,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
             }
         }
 
-        // P4's turn (unchanged)
+        // P4's turn
         await this.setCurrentPlayer('P4');
         const p4DrawnCard = await this.drawCard('P4', 'adventure');
         await this.discardCard('P4', p4DrawnCard);
@@ -150,13 +150,13 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
 
     async handleQuestCompletion(winners) {
         for (const player of winners) {
-            // First discard entire hand
+
             const currentHand = await this.getPlayerHand(player);
             for (const card of currentHand) {
                 await this.discardCard(player, card);
             }
 
-            // Then give appropriate new hand based on quest rewards
+
             const newHand = this.getQuestRewardHand(player);
             for (const card of newHand) {
                 await this.addCardToHand(player, card);
@@ -180,7 +180,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
             await this.discardCard('P3', card);
         }
 
-        // Set up the exact hand as per requirements
+
         const requiredHand = [
             'F5', 'F5', 'F40',
             'D5', 'D5', 'H10',
@@ -277,7 +277,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
             await this.discardCard('P2', card);
         }
 
-        // Set the expected hand after first quest
+
         const expectedHand = ['F10', 'F15', 'F25', 'F30', 'F30', 'F40', 'F50', 'L20', 'L20'];
         for (const card of expectedHand) {
             await this.addCardToHand('P2', card);
@@ -333,7 +333,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
 
         await this.handleP3QuestCleanup();
 
-        // Make sure F30 is in P2's hand
+
         await this.setCurrentPlayer('P2');
         const p2Hand = await this.getPlayerHand('P2');
         if (!p2Hand.includes('F30')) {
@@ -427,7 +427,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
         console.log('P2 drew:', drawnCardP2);
         await this.maintainHandSize('P2');
 
-        // Verify D5 is available
+
         const p2Hand = await this.getPlayerHand('P2');
         if (!p2Hand.includes('D5')) {
             await this.addCardToHand('P2', 'D5');
@@ -445,7 +445,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
         console.log('P4 drew:', drawnCardP4);
         await this.maintainHandSize('P4');
 
-        // Verify D5 is available
+
         const p4Hand = await this.getPlayerHand('P4');
         if (!p4Hand.includes('D5')) {
             await this.addCardToHand('P4', 'D5');

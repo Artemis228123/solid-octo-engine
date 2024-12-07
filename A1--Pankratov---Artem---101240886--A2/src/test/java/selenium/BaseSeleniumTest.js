@@ -275,11 +275,11 @@ class BaseSeleniumTest {
         console.log(`Selecting cards for ${playerId}:`, cardIds);
         const handElement = await this.waitForElement(By.id(`${playerId.toLowerCase()}-hand`));
 
-        // Debug: Log the entire hand HTML
+
         const handHtml = await handElement.getAttribute('innerHTML');
         console.log('Hand HTML:', handHtml);
 
-        // Debug: Log all available cards
+
         const allCards = await handElement.findElements(By.className('card'));
         console.log('All cards in hand:');
         for (const card of allCards) {
@@ -317,7 +317,7 @@ class BaseSeleniumTest {
                 throw new Error(`No more unselected ${cardId} cards available`);
             }
 
-            // Small delay between selections
+
             await this.driver.sleep(100);
         }
 
@@ -337,7 +337,7 @@ class BaseSeleniumTest {
                 await this.setShields(playerId, expectedState.shields);
             }
         } else {
-            // Legacy verification for tests not using HandManagementSystem
+
             console.log(`\nVerifying state for ${playerId}...`);
 
             if (expectedState.shields !== undefined) {
@@ -445,7 +445,7 @@ class BaseSeleniumTest {
                 {type: 'B', value: 15},      // P4's draw (Battle Axe)
 
                 // Stage 2 draws
-                {type: 'F', value: 10},      // P1's draw (F10) - critical for the test
+                {type: 'F', value: 10},      // P1's draw (F10)
                 {type: 'L', value: 20},      // P3's draw (Lance)
                 {type: 'L', value: 20},      // P4's draw (Lance)
 
@@ -476,7 +476,7 @@ class BaseSeleniumTest {
             '2WINNER': [
                 // Stage 1 draws for first quest
                 {type: 'F', value: 30}, // P2's draw
-                {type: 'F', value: 40}, // P3's draw - critical for scenario
+                {type: 'F', value: 40}, // P3's draw
                 {type: 'F', value: 10}, // P4's draw
 
                 // Stage 2 draws
@@ -495,7 +495,7 @@ class BaseSeleniumTest {
                 {type: 'B', value: 15}, // For P3's hand
                 {type: 'L', value: 20}, // For P3's hand
 
-                // Second quest draws (unchanged)
+                // Second quest draws
                 {type: 'D', value: 5},  // P2's draw for stage 1
                 {type: 'D', value: 5},  // P4's draw for stage 1
                 {type: 'F', value: 15}, // P2's draw for stage 2
@@ -514,19 +514,78 @@ class BaseSeleniumTest {
     }
 
     async maintainHandSize(playerId, maxSize = 12) {
-        const currentHand = await this.getPlayerHand(playerId);
+
+        let currentHand = await this.getPlayerHand(playerId);
+
+
+
         if (currentHand.length > maxSize) {
+
+
+
+            const numToDiscard = currentHand.length - maxSize;
+
+
+
             console.log(`Trimming ${playerId}'s hand from ${currentHand.length} to ${maxSize} cards`);
-            for (let i = currentHand.length - 1; i >= maxSize; i--) {
+
+
+            currentHand.sort((a,b) => {
+
+                if (a.charAt(0) === 'F' && b.charAt(0) !== 'F') return -1;
+
+                if (a.charAt(0) !== 'F' && b.charAt(0) === 'F') return 1;
+
+                if (a.charAt(0) !== 'F' && b.charAt(0) !== 'F') {
+
+                    const aValue = parseInt(a.substring(1))
+
+                    const bValue = parseInt(b.substring(1))
+
+                    if (aValue !== bValue) return aValue - bValue;
+
+                    if (a.charAt(0) !== b.charAt(0)) {
+
+                        if (a === 'S10' && b === 'H10') return -1;
+
+                        if (a === 'H10' && b === 'S10') return 1;
+
+                        return a.localeCompare(b)
+
+                    }
+
+                }
+
+                return 0;
+
+
+
+            })
+
+
+
+
+
+            for (let i = 0; i < numToDiscard; i++) {
+
                 await this.discardCard(playerId, currentHand[i]);
+
             }
 
-            // Verify final hand size
+
+
+
+
             const newHand = await this.getPlayerHand(playerId);
+
             if (newHand.length !== maxSize) {
-                console.warn(`WARNING: ${playerId}'s hand size is ${newHand.length} after trimming`);
+
+                console.warn(`WARNING: ${playerId}'s hand size is ${newHand.length} after trimming, expected ${maxSize}`);
+
             }
+
         }
+
     }
 
     async enforcePlayerState(playerId, requiredState) {
@@ -538,14 +597,14 @@ class BaseSeleniumTest {
             await this.discardCard(playerId, card);
         }
 
-        // Set exact required hand
+
         if (requiredState.hand) {
             for (const card of requiredState.hand) {
                 await this.addCardToHand(playerId, card);
             }
         }
 
-        // Set shields
+
         if (requiredState.shields !== undefined) {
             await this.setShields(playerId, requiredState.shields);
         }
@@ -565,10 +624,10 @@ class BaseSeleniumTest {
                 {type: 'QUEST', stages: 3}  // Second quest
             ],
             '1WINNER': [
-                // Will be implemented for 1winner scenario
+
             ],
             '0WINNER': [
-                // Will be implemented for 0winner scenario
+
             ]
         };
         return eventDecks[scenario] || [];
@@ -631,15 +690,51 @@ class BaseSeleniumTest {
     }
 
     async handleQueensFavorEffect(playerId) {
-        // Draw specific cards
-        await this.addCardToHand(playerId, 'F30');
-        await this.addCardToHand(playerId, 'F25');
 
-        // Discard specific cards
-        await this.discardCard(playerId, 'F25');
-        await this.discardCard(playerId, 'F30');
+
+
+        const initialHand = await this.getPlayerHand(playerId);
+
+
+
+
+
+        const drawnCard1 = await this.drawSpecificCard(playerId, 'F30');
+
+        const drawnCard2 = await this.drawSpecificCard(playerId, 'F25');
+
+        console.log("Drawn Cards: " + drawnCard1 + drawnCard2)
+
+
+
+        await this.discardCard(playerId, drawnCard1);
+
+
+
+        await this.discardCard(playerId, drawnCard2);
+
+
+
+
 
         await this.maintainHandSize(playerId);
+
+
+
+
+
+
+
+        const postDiscardHand = await this.getPlayerHand(playerId);
+
+
+
+        if (postDiscardHand.length + 2 !== initialHand.length + 2) {
+
+            throw new Error(`Discard during Queen's Favor failed for ${playerId}`);
+
+        }
+
     }
 
     async executeStateTransition(playerId, operation, expectedFinalState) {
@@ -694,6 +789,8 @@ throw new Error('Card ${cardId} not found in deck');
             return a.localeCompare(b);
         });
     }
+
+
 
 
     async setupDeterministicDecks(scenario) {
@@ -834,7 +931,7 @@ window.gameState.eventDeck = [];
 
 // Stage 4
 
-                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'F', value: 20 }, // P2, P3, P4 draws (P4 draws H10)
+                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'F', value: 20 }, // P2, P3, P4 draws
 
 // P1's post-quest draws (8 cards)
 
@@ -872,17 +969,17 @@ window.gameState.eventDeck = [];
 
 // Stage 1
 
-                    { type: 'D', value: 5 }, { type: 'D', value: 5 }, { type: 'D', value: 5 }, // P2, P3, P4 draws D5
+                    { type: 'B', value: 15 }, { type: 'B', value: 15 }, { type: 'F', value: 50 }, // P2, P3, P4 draws
 
 // Stage 2
 
-                    { type: 'S', value: 10 }, { type: 'S', value: 10 }, // P2, P3 draws S10
+                    { type: 'S', value: 10 }, { type: 'S', value: 10 },  // P2, P3 draws
 
-                    { type: 'B', value: 15 }, { type: 'B', value: 15 }, // P2, P3 draws B15
+                    { type: 'B', value: 15 }, { type: 'B', value: 15 }, // P2 and P3 draw
 
 // Stage 3
 
-                    { type: 'E', value: 30 }, { type: 'E', value: 30 } // P2, P3 draws E30
+                    { type: 'E', value: 30 }, { type: 'E', value: 30 } // P2 and P3 draw
 
                 ];
 
@@ -906,21 +1003,17 @@ window.gameState.eventDeck = [];
 
                 adventureCards = [
 
-// Stage 1 draws
+                    { type: 'F', value: 5 }, // For P2
 
-                    { type: 'F', value: 5 }, { type: 'F', value: 5 }, { type: 'F', value: 5 }, // P2, P3, P4 draws
+                    { type: 'F', value: 15 }, // For P3
 
-// P1's post-quest draws (4 cards)
+                    { type: 'F', value: 10 }, // For P4
 
-                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'F', value: 15 }, { type: 'F', value: 20 }
-
-                ];
-
-                eventCards = [
-
-                    { type: 'QUEST', stages: 2 } // Quest drawn by P1
+                    ...Array(14).fill({type: 'F', value: 5}) // Fill rest of deck with foes
 
                 ];
+
+                eventCards = [{ type: 'QUEST', stages: 2 }];
 
                 break;
 
@@ -942,7 +1035,6 @@ window.gameState.eventDeck = ${JSON.stringify(eventCards)};
 
 `);
 
-// Optional: Log deck setup for verification
 
         const deckState = await this.driver.executeScript(`
 

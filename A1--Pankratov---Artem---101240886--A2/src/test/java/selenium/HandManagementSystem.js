@@ -12,7 +12,7 @@ class HandState {
         this.stageTransitions[stageNum] = playerStates;
     }
 
-    // Force exact hand composition
+
     async enforceHandState(playerId, expectedCards) {
         console.log(`Enforcing hand state for ${playerId}`);
         console.log('Expected cards:', expectedCards);
@@ -21,14 +21,14 @@ class HandState {
         const currentHand = await this.test.getPlayerHand(playerId);
         console.log('Current hand:', currentHand);
 
-        // Remove all unexpected cards
+
         for (const card of currentHand) {
             if (!this.shouldKeepCard(card, expectedCards)) {
                 await this.test.discardCard(playerId, card);
             }
         }
 
-        // Add all missing cards
+
         const updatedHand = await this.test.getPlayerHand(playerId);
         for (const expectedCard of expectedCards) {
             if (!this.hasCorrectCount(expectedCard, updatedHand, expectedCards)) {

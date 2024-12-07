@@ -1,10 +1,11 @@
 const JPScenarioTest = require('./A1--Pankratov---Artem---101240886--A2/src/test/java/selenium/JPScenarioTest');
 const TwoWinnerScenarioTest = require('./A1--Pankratov---Artem---101240886--A2/src/test/java/selenium/2WinnerScenarioTest');
 const OneWinnerScenarioTest = require('./A1--Pankratov---Artem---101240886--A2/src/test/java/selenium/OneWinnerScenarioTest');
+const ZeroWinnerScenarioTest = require('./A1--Pankratov---Artem---101240886--A2/src/test/java/selenium/ZeroWinnerScenarioTest');
 
 async function runTests() {
     // Run JP Scenario
-    /*   console.log('Starting JP Scenario Test...');
+       console.log('Starting JP Scenario Test...');
        const jpTest = new JPScenarioTest();
        try {
            await jpTest.runTest();
@@ -22,7 +23,7 @@ async function runTests() {
        } catch (error) {
            console.error('2 Winner Scenario Test failed:', error);
        }
-   */
+
     // Run One Winner Scenario
 
     console.log('Starting One Winner Scenario Test...');
@@ -36,6 +37,22 @@ async function runTests() {
     } catch (error) {
 
         console.error('One Winner Scenario Test failed:', error);
+
+    }
+
+    // Zero Winner Scenario
+
+    console.log('Starting Zero Winner Scenario Test...');
+    const zeroWinnerTest = new ZeroWinnerScenarioTest();
+    try {
+
+        await zeroWinnerTest.runTest();
+
+        console.log('Zero Winner Scenario Test completed successfully!');
+
+    } catch (error) {
+
+        console.error('Zero Winner Scenario Test failed:', error);
 
     }
 }

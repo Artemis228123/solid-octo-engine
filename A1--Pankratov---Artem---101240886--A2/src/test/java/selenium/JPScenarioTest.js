@@ -140,25 +140,22 @@ class JPScenarioTest extends BaseSeleniumTest {
         // P1's insufficient attack
         await this.setCurrentPlayer('P1');
 
-        // At this point P1's hand should be:
-        // F5, F15, F15, H10, B15, B15, L20, F30, F10
 
-        // P1 draws a new F10
+
+
         const drawnCard = await this.drawCard('P1', 'adventure'); // Should draw F10
         console.log('P1 drew:', drawnCard);
 
-        // Important: Need to discard one F10 to maintain correct hand
+
         if (drawnCard === 'F10') {
             await this.discardCard('P1', 'F10');
         }
 
-        // According to scenario:
-        // "P1 plays Horse (insufficient attack) and loses"
+
         await this.selectCards('P1', ['H10']);
         await this.clickButton('confirm-action');
 
-        // Important: Don't discard H10 since the attack was insufficient
-        // P1's hand should now be: F5, F10, F15, F15, F30, H10, B15, B15, L20
+
 
         // P3's turn
         await this.setCurrentPlayer('P3');
@@ -172,12 +169,11 @@ class JPScenarioTest extends BaseSeleniumTest {
         await this.setCurrentPlayer('P4');
         await this.drawCard('P4', 'adventure'); // Draws Lance
 
-        // According to scenario:
-        // "P4 attack: Horse + Battle Axe => value of 25"
+
         await this.selectCards('P4', ['H10', 'B15']);
         await this.clickButton('confirm-action');
 
-        // Now discard the attack cards
+        // now discard the attack cards
         await this.discardCard('P4', 'H10');
         await this.discardCard('P4', 'B15');
 
@@ -236,7 +232,7 @@ class JPScenarioTest extends BaseSeleniumTest {
         await this.drawCard('P3', 'adventure'); // F30
         console.log('P3 hand before attack:', await this.getPlayerHand('P3'));
 
-        // Add S10 to P3's hand (this was missing)
+
         await this.addCardToHand('P3', 'S10');
 
         // P3's unsuccessful attack with just B15
