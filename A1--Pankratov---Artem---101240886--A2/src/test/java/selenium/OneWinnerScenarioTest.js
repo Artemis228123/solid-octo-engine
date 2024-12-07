@@ -394,13 +394,13 @@ class OneWinnerScenarioTest extends QuestGameTest {
 
 // P4 plays B15 and H10
 
-        await this.selectCards('P4', ['B15', 'H10']);
+        await this.selectCards('P4', ['L20', 'L20']);
 
         await this.clickButton('confirm-action');
 
-        await this.discardCard('P4', 'B15');
+        await this.discardCard('P4', 'L20');
 
-        await this.discardCard('P4', 'H10');
+        await this.discardCard('P4', 'L20');
 
     }
 
@@ -476,46 +476,107 @@ class OneWinnerScenarioTest extends QuestGameTest {
     }
 
     async handleSecondQuestStages() {
-        // Stage 1
+
+// Stage 1
+
+// P2's turn
+
         await this.setCurrentPlayer('P2');
-        await this.drawCard('P2', 'adventure');
-        await this.selectCards('P2', ['B15']);
+
+        const drawnCardP2 = await this.drawSpecificCard('P2', 'D5'); // P2 draws D5
+
+        console.log(`P2 drew: ${drawnCardP2}`);
+
+        await this.selectCards('P2', ['D5']);
+
         await this.clickButton('confirm-action');
-        await this.discardCard('P2', 'B15');
+
+        await this.discardCard('P2', 'D5');
+
+// P3's turn
 
         await this.setCurrentPlayer('P3');
-        await this.drawCard('P3', 'adventure');
-        await this.selectCards('P3', ['B15']);
+
+        const drawnCardP3 = await this.drawSpecificCard('P3', 'D5'); // P3 draws D5
+
+        console.log(`P3 drew: ${drawnCardP3}`);
+
+        await this.selectCards('P3', ['D5']);
+
         await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'D5');
+
+// P4's turn
+
+        await this.setCurrentPlayer('P4');
+
+        const drawnCardP4 = await this.drawSpecificCard('P4', 'D5'); // P4 draws D5
+
+        console.log(`P4 drew: ${drawnCardP4}`);
+
+        await this.selectCards('P4', ['D5']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P4', 'D5');
+
+// Stage 2
+
+// P2's turn
+
+        await this.setCurrentPlayer('P2');
+
+        await this.drawSpecificCard('P2', 'B15'); // P2 draws B15
+
+        await this.selectCards('P2', ['S10', 'B15']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P2', 'S10');
+
+        await this.discardCard('P2', 'B15');
+
+// P3's turn
+
+        await this.setCurrentPlayer('P3');
+
+        await this.drawSpecificCard('P3', 'B15'); // P3 draws B15
+
+        await this.selectCards('P3', ['S10', 'B15']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'S10');
+
         await this.discardCard('P3', 'B15');
 
-        // Stage 2 & 3
-        for (let stage = 2; stage <= 3; stage++) {
-            for (const playerId of ['P2', 'P3']) {
-                await this.setCurrentPlayer(playerId);
-                await this.drawCard(playerId, 'adventure');
-                if (stage === 2) {
-                    await this.selectCards(playerId, ['S10', 'B15']);
-                } else { if (playerId === 'P2') {
-                    await this.selectCards(playerId, ['L20', 'S10']);
-                } else {
-                    await this.selectCards(playerId, ['E30']);
-                }
-                }
-                await this.clickButton('confirm-action');
-                if (stage === 2) {
-                    await this.discardCard(playerId, 'S10');
-                    await this.discardCard(playerId, 'B15');
-                } else {
-                    if (playerId === 'P2') {
-                        await this.discardCard(playerId, 'L20');
-                        await this.discardCard(playerId, 'S10');
-                    } else {
-                        await this.discardCard(playerId, 'E30');
-                    }
-                }
-            }
-        }
+// Stage 3
+
+// P2's turn
+
+        await this.setCurrentPlayer('P2');
+
+        await this.drawSpecificCard('P2', 'E30'); // P2 draws E30
+
+        await this.selectCards('P2', ['E30']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P2', 'E30');
+
+// P3's turn
+
+        await this.setCurrentPlayer('P3');
+
+        await this.drawSpecificCard('P3', 'E30'); // P3 draws E30
+
+        await this.selectCards('P3', ['E30']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'E30');
+
     }
 
     async verifyInitialState() {

@@ -654,19 +654,23 @@ class BaseSeleniumTest {
 
     async drawSpecificCard(playerId, cardId) {
 
-        await this.driver.executeScript(`
+        const cardDrawn = await this.driver.executeScript(`
 
 const deck = window.gameState.adventureDeck;
 
-const cardIndex = deck.indexOf('${cardId}');
+const cardIndex = deck.findIndex(card => (card.type + card.value) === '${cardId}');
 
 if (cardIndex >= 0) {
 
 const card = deck.splice(cardIndex, 1)[0];
 
-window.gameState.players['${playerId}'].cards.push(card);
+const cardId = card.type + card.value;
+
+window.gameState.players['${playerId}'].cards.push(cardId);
 
 updatePlayerHand('${playerId}', window.gameState.players['${playerId}'].cards);
+
+return cardId;
 
 } else {
 
@@ -675,6 +679,8 @@ throw new Error('Card ${cardId} not found in deck');
 }
 
 `);
+
+        return cardDrawn;
 
     }
 
@@ -828,7 +834,7 @@ window.gameState.eventDeck = [];
 
 // Stage 4
 
-                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'H', value: 10 }, // P2, P3, P4 draws (P4 draws H10)
+                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'F', value: 20 }, // P2, P3, P4 draws (P4 draws H10)
 
 // P1's post-quest draws (8 cards)
 
@@ -866,15 +872,17 @@ window.gameState.eventDeck = [];
 
 // Stage 1
 
-                    { type: 'S', value: 10 }, { type: 'S', value: 10 }, // P2, P3 draws
+                    { type: 'D', value: 5 }, { type: 'D', value: 5 }, { type: 'D', value: 5 }, // P2, P3, P4 draws D5
 
 // Stage 2
 
-                    { type: 'F', value: 15 }, { type: 'F', value: 15 }, // P2, P3 draws
+                    { type: 'S', value: 10 }, { type: 'S', value: 10 }, // P2, P3 draws S10
+
+                    { type: 'B', value: 15 }, { type: 'B', value: 15 }, // P2, P3 draws B15
 
 // Stage 3
 
-                    { type: 'F', value: 40 }, { type: 'F', value: 50 } // P2, P3 draws
+                    { type: 'E', value: 30 }, { type: 'E', value: 30 } // P2, P3 draws E30
 
                 ];
 
