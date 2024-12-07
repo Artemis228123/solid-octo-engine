@@ -12,6 +12,7 @@ class OneWinnerScenarioTest extends QuestGameTest {
             await this.setup('1WINNER');
             console.log('Setting up initial game state...');
 
+            await this.setupDeterministicDecks('1WINNER');
             await this.setInitialHands();
             await this.verifyInitialState();
             await this.initializeGameState();
@@ -206,79 +207,95 @@ class OneWinnerScenarioTest extends QuestGameTest {
     }
 
     async handleFirstQuestStage1() {
-        for (const playerId of ['P2', 'P3', 'P4']) {
-            await this.setCurrentPlayer(playerId);
 
-            // Verify S10 cards are available
-            const handBefore = await this.getPlayerHand(playerId);
-            console.log(`${playerId}'s hand before stage 1:`, handBefore);
-            const s10Count = handBefore.filter(card => card === 'S10').length;
-            if (s10Count === 0) {
-                throw new Error(`${playerId} has no S10 cards available for stage 1`);
-            }
+// P2's turn
 
-            // Draw card and handle discard
-            await this.drawCard(playerId, 'adventure');
-            await this.discardCard(playerId, 'F5');
+        await this.setCurrentPlayer('P2');
 
-            // Execute attack
-            await this.selectCards(playerId, ['S10']);
-            await this.clickButton('confirm-action');
-            await this.discardCard(playerId, 'S10');
+        await this.drawSpecificCard('P2', 'F5'); // P2 draws F5
 
-            // Verify hand after stage
-            const handAfter = await this.getPlayerHand(playerId);
-            console.log(`${playerId}'s hand after stage 1:`, handAfter);
-        }
+        await this.discardCard('P2', 'F5');
+
+        await this.selectCards('P2', ['S10']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P2', 'S10');
+
+// P3's turn
+
+        await this.setCurrentPlayer('P3');
+
+        await this.drawSpecificCard('P3', 'F5'); // P3 draws F5
+
+        await this.discardCard('P3', 'F5');
+
+        await this.selectCards('P3', ['S10']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'S10');
+
+// P4's turn
+
+        await this.setCurrentPlayer('P4');
+
+        await this.drawSpecificCard('P4', 'F5'); // P4 draws F5
+
+        await this.discardCard('P4', 'F5');
+
+        await this.selectCards('P4', ['S10']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P4', 'S10');
+
     }
 
     async handleFirstQuestStage2() {
-        for (const playerId of ['P2', 'P3', 'P4']) {
-            await this.setCurrentPlayer(playerId);
 
-            // Draw card first
-            const drawnCard = await this.drawCard(playerId, 'adventure');
-            console.log(`${playerId} drew:`, drawnCard);
+// P2's turn
 
-            // Before selecting cards, make sure H10 is available
-            const currentHand = await this.getPlayerHand(playerId);
-            if (!currentHand.includes('H10')) {
-                await this.addCardToHand(playerId, 'H10');
-            }
+        await this.setCurrentPlayer('P2');
 
-            // Select and use H10
-            await this.selectCards(playerId, ['H10']);
-            await this.clickButton('confirm-action');
-            await this.discardCard(playerId, 'H10');
+        await this.drawSpecificCard('P2', 'F15'); // P2 draws F15
 
-            // Now enforce the required hand state
-            const requiredHand = playerId === 'P2' ?
-                ['B15', 'E30', 'F10', 'F15', 'F15', 'F25', 'F30', 'F30', 'L20', 'L20'] :
-                playerId === 'P3' ?
-                    ['F5', 'F10', 'F15', 'F25', 'F30', 'F30', 'B15', 'L20', 'L20', 'E30'] :
-                    ['F15', 'F25', 'F25', 'F30', 'F70', 'B15', 'L20', 'L20'];
+        await this.selectCards('P2', ['H10', 'B15']); // Attack with Horse and Battle Axe
 
-            // Clear current hand
-            for (const card of currentHand) {
-                if (!requiredHand.includes(card) ||
-                    currentHand.filter(c => c === card).length >
-                    requiredHand.filter(c => c === card).length) {
-                    await this.discardCard(playerId, card);
-                }
-            }
+        await this.clickButton('confirm-action');
 
-            // Add missing cards
-            for (const card of requiredHand) {
-                if (!currentHand.includes(card) ||
-                    currentHand.filter(c => c === card).length <
-                    requiredHand.filter(c => c === card).length) {
-                    await this.addCardToHand(playerId, card);
-                }
-            }
+        await this.discardCard('P2', 'H10');
 
-            // Verify final state
-            console.log(`${playerId}'s hand after stage 2:`, await this.getPlayerHand(playerId));
-        }
+        await this.discardCard('P2', 'B15');
+
+// P3's turn
+
+        await this.setCurrentPlayer('P3');
+
+        await this.drawSpecificCard('P3', 'F15'); // P3 draws F15
+
+        await this.selectCards('P3', ['H10', 'B15']); // Attack with Horse and Battle Axe
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'H10');
+
+        await this.discardCard('P3', 'B15');
+
+// P4's turn
+
+        await this.setCurrentPlayer('P4');
+
+        await this.drawSpecificCard('P4', 'F15'); // P4 draws F15
+
+        await this.selectCards('P4', ['H10', 'B15']); // Attack with Horse and Battle Axe
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P4', 'H10');
+
+        await this.discardCard('P4', 'B15');
+
     }
 
     async verifyStage2States() {
@@ -304,57 +321,87 @@ class OneWinnerScenarioTest extends QuestGameTest {
     }
 
     async handleFirstQuestStage3() {
-        console.log('Handling stage 3...');
 
-        // P2's turn
+// P2's turn
+
         await this.setCurrentPlayer('P2');
-        await this.drawCard('P2', 'adventure');
-        // Single card attack with battle axe
-        await this.selectCards('P2', ['B15']);
-        await this.clickButton('confirm-action');
-        await this.discardCard('P2', 'B15');
 
-        // P3's turn
+        await this.drawSpecificCard('P2', 'F5'); // P2 draws F5
+
+        await this.selectCards('P2', ['L20']); // Attack with Lance
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P2', 'L20');
+
+// P3's turn
+
         await this.setCurrentPlayer('P3');
-        await this.drawCard('P3', 'adventure');
-        await this.selectCards('P3', ['B15']);
-        await this.clickButton('confirm-action');
-        await this.discardCard('P3', 'B15');
 
-        // P4's turn
+        await this.drawSpecificCard('P3', 'F10'); // P3 draws F10
+
+        await this.selectCards('P3', ['L20']); // Attack with Lance
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'L20');
+
+// P4's turn
+
         await this.setCurrentPlayer('P4');
-        await this.drawCard('P4', 'adventure');
-        await this.selectCards('P4', ['B15']);
+
+        await this.drawSpecificCard('P4', 'F20'); // P4 draws F20
+
+        await this.selectCards('P4', ['L20']); // Attack with Lance
+
         await this.clickButton('confirm-action');
-        await this.discardCard('P4', 'B15');
 
-        await this.handManager.enforceHandState('P2', [
-            'F10', 'F15', 'F25', 'F30', 'F40', 'F50', 'L20', 'L20'  // Exactly as required
-        ]);
+        await this.discardCard('P4', 'L20');
 
-        await this.handManager.enforceHandState('P3', [
-            'F10', 'F25', 'F30', 'F40', 'F50', 'H10', 'H10', 'L20', 'B15'
-        ]);
-
-        await this.handManager.enforceHandState('P4', [
-            'F15', 'F20', 'F25', 'F25', 'F30', 'F70', 'B15', 'L20', 'L20'
-        ]);
-
-        // Verify final shields state
-        await this.setShields('P2', 0);
-        await this.setShields('P3', 0);
-        await this.setShields('P4', 0);
     }
 
     async handleFirstQuestStage4() {
-        for (const playerId of ['P2', 'P3', 'P4']) {
-            await this.setCurrentPlayer(playerId);
-            await this.drawCard(playerId, 'adventure');
-            await this.selectCards(playerId, ['L20']);
-            await this.clickButton('confirm-action');
-            await this.discardCard(playerId, 'L20');
-            await this.handManager.verifyCurrentState(playerId);
-        }
+
+// P2's turn
+
+        await this.setCurrentPlayer('P2');
+
+        await this.drawSpecificCard('P2', 'F5'); // P2 draws F5
+
+        await this.selectCards('P2', ['E30']); // Attack with Excalibur
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P2', 'E30');
+
+// P3's turn
+
+        await this.setCurrentPlayer('P3');
+
+        await this.drawSpecificCard('P3', 'F10'); // P3 draws F10
+
+        await this.selectCards('P3', ['E30']); // Attack with Excalibur
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P3', 'E30');
+
+// P4's turn
+
+        await this.setCurrentPlayer('P4');
+
+        await this.drawSpecificCard('P4', 'F20'); // P4 draws F20
+
+// P4 plays B15 and H10
+
+        await this.selectCards('P4', ['B15', 'H10']);
+
+        await this.clickButton('confirm-action');
+
+        await this.discardCard('P4', 'B15');
+
+        await this.discardCard('P4', 'H10');
+
     }
 
     async handleP1QuestCleanup() {

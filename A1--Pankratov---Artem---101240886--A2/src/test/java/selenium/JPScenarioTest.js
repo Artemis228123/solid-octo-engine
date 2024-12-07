@@ -11,6 +11,7 @@ class JPScenarioTest extends BaseSeleniumTest {
         try {
             // Set up with JP scenario
             await this.setup('JP');
+            await this.setupDeterministicDecks('JP');
             console.log('Setting up initial game state...');
             await this.setInitialHands();
 

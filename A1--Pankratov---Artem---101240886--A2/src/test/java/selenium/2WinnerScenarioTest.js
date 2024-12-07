@@ -10,6 +10,7 @@ class TwoWinnerScenarioTest extends BaseSeleniumTest {
     async runTest() {
         try {
             await this.setup('2WINNER');
+            await this.setupDeterministicDecks('2WINNER');
             console.log('Setting up initial game state...');
 
             await this.setInitialHands();

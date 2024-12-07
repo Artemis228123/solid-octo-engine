@@ -75,7 +75,7 @@ class BaseSeleniumTest {
             }
         }, this.defaultTimeout, 'Game initialization failed');
 
-        await this.driver.manage().setTimeouts({ implicit: 5000 });
+        await this.driver.manage().setTimeouts({implicit: 5000});
     }
 
     async teardown() {
@@ -440,68 +440,68 @@ class BaseSeleniumTest {
         const scenarioDecks = {
             'JP': [
                 // Stage 1 draws
-                { type: 'F', value: 30 },      // P1's draw (F30)
-                { type: 'S', value: 10 },      // P3's draw (Sword)
-                { type: 'B', value: 15 },      // P4's draw (Battle Axe)
+                {type: 'F', value: 30},      // P1's draw (F30)
+                {type: 'S', value: 10},      // P3's draw (Sword)
+                {type: 'B', value: 15},      // P4's draw (Battle Axe)
 
                 // Stage 2 draws
-                { type: 'F', value: 10 },      // P1's draw (F10) - critical for the test
-                { type: 'L', value: 20 },      // P3's draw (Lance)
-                { type: 'L', value: 20 },      // P4's draw (Lance)
+                {type: 'F', value: 10},      // P1's draw (F10) - critical for the test
+                {type: 'L', value: 20},      // P3's draw (Lance)
+                {type: 'L', value: 20},      // P4's draw (Lance)
 
                 // Stage 3 draws
-                { type: 'B', value: 15 },      // P3's draw (Battle Axe)
-                { type: 'S', value: 10 },      // P4's draw (Sword)
+                {type: 'B', value: 15},      // P3's draw (Battle Axe)
+                {type: 'S', value: 10},      // P4's draw (Sword)
 
                 // Stage 4 draws
-                { type: 'F', value: 30 },      // P3's draw
-                { type: 'L', value: 20 },      // P4's draw (Lance)
+                {type: 'F', value: 30},      // P3's draw
+                {type: 'L', value: 20},      // P4's draw (Lance)
 
                 // P2's replacement draws (13 cards: 9 replacements + 4 stage bonus)
-                { type: 'F', value: 10 },
-                { type: 'F', value: 15 },
-                { type: 'F', value: 20 },
-                { type: 'F', value: 25 },
-                { type: 'F', value: 30 },
-                { type: 'F', value: 30 },
-                { type: 'F', value: 35 },
-                { type: 'F', value: 40 },
-                { type: 'F', value: 50 },
+                {type: 'F', value: 10},
+                {type: 'F', value: 15},
+                {type: 'F', value: 20},
+                {type: 'F', value: 25},
+                {type: 'F', value: 30},
+                {type: 'F', value: 30},
+                {type: 'F', value: 35},
+                {type: 'F', value: 40},
+                {type: 'F', value: 50},
                 // Extra cards for 4 stages
-                { type: 'S', value: 10 },
-                { type: 'H', value: 10 },
-                { type: 'B', value: 15 },
-                { type: 'L', value: 20 }
+                {type: 'S', value: 10},
+                {type: 'H', value: 10},
+                {type: 'B', value: 15},
+                {type: 'L', value: 20}
             ],
             '2WINNER': [
                 // Stage 1 draws for first quest
-                { type: 'F', value: 30 }, // P2's draw
-                { type: 'F', value: 40 }, // P3's draw - critical for scenario
-                { type: 'F', value: 10 }, // P4's draw
+                {type: 'F', value: 30}, // P2's draw
+                {type: 'F', value: 40}, // P3's draw - critical for scenario
+                {type: 'F', value: 10}, // P4's draw
 
                 // Stage 2 draws
-                { type: 'B', value: 15 }, // P2's draw
-                { type: 'F', value: 10 }, // P4's draw
+                {type: 'B', value: 15}, // P2's draw
+                {type: 'F', value: 10}, // P4's draw
 
                 // Stage 3 draws
-                { type: 'L', value: 20 }, // P2's draw
-                { type: 'L', value: 20 }, // P4's draw
+                {type: 'L', value: 20}, // P2's draw
+                {type: 'L', value: 20}, // P4's draw
 
                 // Stage 4 draws
-                { type: 'B', value: 15 }, // P2's draw
-                { type: 'S', value: 10 }, // P4's draw
+                {type: 'B', value: 15}, // P2's draw
+                {type: 'S', value: 10}, // P4's draw
 
                 // Additional cards needed for P3's hand
-                { type: 'B', value: 15 }, // For P3's hand
-                { type: 'L', value: 20 }, // For P3's hand
+                {type: 'B', value: 15}, // For P3's hand
+                {type: 'L', value: 20}, // For P3's hand
 
                 // Second quest draws (unchanged)
-                { type: 'D', value: 5 },  // P2's draw for stage 1
-                { type: 'D', value: 5 },  // P4's draw for stage 1
-                { type: 'F', value: 15 }, // P2's draw for stage 2
-                { type: 'F', value: 15 }, // P4's draw for stage 2
-                { type: 'F', value: 25 }, // P2's draw for stage 3
-                { type: 'F', value: 25 }  // P4's draw for stage 3
+                {type: 'D', value: 5},  // P2's draw for stage 1
+                {type: 'D', value: 5},  // P4's draw for stage 1
+                {type: 'F', value: 15}, // P2's draw for stage 2
+                {type: 'F', value: 15}, // P4's draw for stage 2
+                {type: 'F', value: 25}, // P2's draw for stage 3
+                {type: 'F', value: 25}  // P4's draw for stage 3
             ],
             '1WINNER': [
                 // Will be implemented for 1winner scenario
@@ -558,11 +558,11 @@ class BaseSeleniumTest {
     getEventDeckForScenario(scenario) {
         const eventDecks = {
             'JP': [
-                { type: 'QUEST', stages: 4 }    // Initial quest card for P1 to decline
+                {type: 'QUEST', stages: 4}    // Initial quest card for P1 to decline
             ],
             '2WINNER': [
-                { type: 'QUEST', stages: 4 }, // First quest
-                { type: 'QUEST', stages: 3 }  // Second quest
+                {type: 'QUEST', stages: 4}, // First quest
+                {type: 'QUEST', stages: 3}  // Second quest
             ],
             '1WINNER': [
                 // Will be implemented for 1winner scenario
@@ -652,6 +652,32 @@ class BaseSeleniumTest {
         }
     }
 
+    async drawSpecificCard(playerId, cardId) {
+
+        await this.driver.executeScript(`
+
+const deck = window.gameState.adventureDeck;
+
+const cardIndex = deck.indexOf('${cardId}');
+
+if (cardIndex >= 0) {
+
+const card = deck.splice(cardIndex, 1)[0];
+
+window.gameState.players['${playerId}'].cards.push(card);
+
+updatePlayerHand('${playerId}', window.gameState.players['${playerId}'].cards);
+
+} else {
+
+throw new Error('Card ${cardId} not found in deck');
+
+}
+
+`);
+
+    }
+
     normalizeHand(hand) {
         // Sort by type (Foes first, then weapons) and value
         return [...hand].sort((a, b) => {
@@ -664,61 +690,268 @@ class BaseSeleniumTest {
     }
 
 
-
     async setupDeterministicDecks(scenario) {
-        // First initialize empty decks
+
+// First, initialize empty decks
+
         await this.driver.executeScript(`
-        window.gameState.adventureDeck = [];
-        window.gameState.eventDeck = [];
-    `);
 
-        // Set up exact card sequence for JP scenario
-        const adventureCards = [];
+window.gameState.adventureDeck = [];
 
-        // Stage 1 sequence
-        adventureCards.push({ type: 'F', value: 30 });  // P1's first draw
-        adventureCards.push({ type: 'F', value: 10 });  // P1's second draw (F10)
-        adventureCards.push({ type: 'S', value: 10 });  // P3's draw
-        adventureCards.push({ type: 'B', value: 15 });  // P4's draw
+window.gameState.eventDeck = [];
 
-        // Stage 2 sequence
-        adventureCards.push({ type: 'F', value: 10 });  // P1's draw
-        adventureCards.push({ type: 'L', value: 20 });  // P3's draw (Lance)
-        adventureCards.push({ type: 'L', value: 20 });  // P4's draw (Lance)
+`);
 
-        // Stage 3 sequence
-        adventureCards.push({ type: 'B', value: 15 });  // P3's draw (Axe)
-        adventureCards.push({ type: 'S', value: 10 });  // P4's draw (Sword)
+        let adventureCards = [];
 
-        // Stage 4 sequence
-        adventureCards.push({ type: 'F', value: 30 });  // P3's draw
-        adventureCards.push({ type: 'L', value: 20 });  // P4's draw (Lance)
+        let eventCards = [];
 
-        // P2's cleanup draws (13 cards = 9 replacements + 4 stage bonus)
-        for (let i = 0; i < 13; i++) {
-            adventureCards.push({ type: 'F', value: 10 });
+        switch (scenario) {
+
+            case 'JP':
+
+                adventureCards = [
+
+// Stage 1 sequence
+
+                    { type: 'F', value: 30 }, // P1's first draw
+
+                    { type: 'F', value: 10 }, // P1's second draw
+
+                    { type: 'S', value: 10 }, // P3's draw
+
+                    { type: 'B', value: 15 }, // P4's draw
+
+// Stage 2 sequence
+
+                    { type: 'F', value: 10 }, // P1's draw
+
+                    { type: 'L', value: 20 }, // P3's draw
+
+                    { type: 'L', value: 20 }, // P4's draw
+
+// Stage 3 sequence
+
+                    { type: 'B', value: 15 }, // P3's draw
+
+                    { type: 'S', value: 10 }, // P4's draw
+
+// Stage 4 sequence
+
+                    { type: 'F', value: 30 }, // P3's draw
+
+                    { type: 'L', value: 20 }, // P4's draw
+
+// P2's cleanup draws (13 cards = 9 replacements + 4 stage bonus)
+
+                    ...Array(13).fill({ type: 'F', value: 10 })
+
+                ];
+
+                eventCards = [{ type: 'QUEST', stages: 4 }];
+
+                break;
+
+            case '2WINNER':
+
+                adventureCards = [
+
+// Stage 1 draws
+
+                    { type: 'F', value: 30 }, // P2's draw
+
+                    { type: 'F', value: 40 }, // P3's draw
+
+                    { type: 'F', value: 10 }, // P4's draw
+
+// Stage 2 draws
+
+                    { type: 'B', value: 15 }, // P2's draw
+
+                    { type: 'F', value: 10 }, // P4's draw
+
+// Stage 3 draws
+
+                    { type: 'L', value: 20 }, // P2's draw
+
+                    { type: 'L', value: 20 }, // P4's draw
+
+// Stage 4 draws
+
+                    { type: 'B', value: 15 }, // P2's draw
+
+                    { type: 'S', value: 10 }, // P4's draw
+
+// Additional cards needed for P3's hand
+
+                    { type: 'B', value: 15 }, // For P3
+
+                    { type: 'L', value: 20 }, // For P3
+
+// Second quest draws
+
+                    { type: 'D', value: 5 }, { type: 'D', value: 5 }, // P2 and P4's draws for stage 1
+
+                    { type: 'F', value: 15 }, { type: 'F', value: 15 }, // P2 and P4's draws for stage 2
+
+                    { type: 'F', value: 25 }, { type: 'F', value: 25 } // P2 and P4's draws for stage 3
+
+                ];
+
+                eventCards = [
+
+                    { type: 'QUEST', stages: 4 }, // First quest
+
+                    { type: 'QUEST', stages: 3 } // Second quest
+
+                ];
+
+                break;
+
+            case '1WINNER':
+
+                adventureCards = [
+
+// First Quest Stage Draws
+
+// Stage 1
+
+                    { type: 'F', value: 5 }, { type: 'F', value: 5 }, { type: 'F', value: 5 }, // P2, P3, P4 draws
+
+// Stage 2
+
+                    { type: 'F', value: 15 }, { type: 'F', value: 15 }, { type: 'F', value: 15 }, // P2, P3, P4 draws
+
+// Stage 3
+
+                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'F', value: 20 }, // P2, P3, P4 draws
+
+// Stage 4
+
+                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'H', value: 10 }, // P2, P3, P4 draws (P4 draws H10)
+
+// P1's post-quest draws (8 cards)
+
+                    { type: 'F', value: 5 }, { type: 'F', value: 5 },
+
+                    { type: 'F', value: 10 }, { type: 'F', value: 10 },
+
+                    { type: 'F', value: 15 }, { type: 'F', value: 15 },
+
+                    { type: 'F', value: 15 }, { type: 'F', value: 15 },
+
+// 'Prosperity' event draws (2 cards per player)
+
+// P1
+
+                    { type: 'F', value: 25 }, { type: 'F', value: 25 },
+
+// P2
+
+                    { type: 'H', value: 10 }, { type: 'S', value: 10 },
+
+// P3
+
+                    { type: 'B', value: 15 }, { type: 'F', value: 40 },
+
+// P4
+
+                    { type: 'H', value: 10 }, { type: 'D', value: 5 },
+
+// 'Queen's Favor' event draws for P4
+
+                    { type: 'F', value: 30 }, { type: 'F', value: 25 },
+
+// Second Quest Stage Draws
+
+// Stage 1
+
+                    { type: 'S', value: 10 }, { type: 'S', value: 10 }, // P2, P3 draws
+
+// Stage 2
+
+                    { type: 'F', value: 15 }, { type: 'F', value: 15 }, // P2, P3 draws
+
+// Stage 3
+
+                    { type: 'F', value: 40 }, { type: 'F', value: 50 } // P2, P3 draws
+
+                ];
+
+                eventCards = [
+
+                    { type: 'QUEST', stages: 4 }, // Quest drawn by P1
+
+                    { type: 'E', eventType: 'Plague' }, // Event drawn by P2
+
+                    { type: 'E', eventType: 'Prosperity' }, // Event drawn by P3
+
+                    { type: 'E', eventType: "Queen's Favor" }, // Event drawn by P4
+
+                    { type: 'QUEST', stages: 3 } // Second quest drawn by P1
+
+                ];
+
+                break;
+
+            case '0WINNER':
+
+                adventureCards = [
+
+// Stage 1 draws
+
+                    { type: 'F', value: 5 }, { type: 'F', value: 5 }, { type: 'F', value: 5 }, // P2, P3, P4 draws
+
+// P1's post-quest draws (4 cards)
+
+                    { type: 'F', value: 5 }, { type: 'F', value: 10 }, { type: 'F', value: 15 }, { type: 'F', value: 20 }
+
+                ];
+
+                eventCards = [
+
+                    { type: 'QUEST', stages: 2 } // Quest drawn by P1
+
+                ];
+
+                break;
+
+            default:
+
+                console.warn(`No deterministic deck setup for scenario: ${scenario}`);
+
+                break;
+
         }
 
-        // Set up event deck
-        const eventCards = [{ type: 'QUEST', stages: 4 }];
+// Update the game state with both decks
 
-        // Update the game state with both decks
         await this.driver.executeScript(`
-        window.gameState.adventureDeck = ${JSON.stringify(adventureCards)};
-        window.gameState.eventDeck = ${JSON.stringify(eventCards)};
-    `);
 
-        // Verify deck setup
+window.gameState.adventureDeck = ${JSON.stringify(adventureCards)};
+
+window.gameState.eventDeck = ${JSON.stringify(eventCards)};
+
+`);
+
+// Optional: Log deck setup for verification
+
         const deckState = await this.driver.executeScript(`
-        return {
-            adventureDeck: window.gameState.adventureDeck.length,
-            eventDeck: window.gameState.eventDeck.length,
-            firstFourCards: window.gameState.adventureDeck.slice(0,4)
-        };
-    `);
+
+return {
+
+adventureDeck: window.gameState.adventureDeck.length,
+
+eventDeck: window.gameState.eventDeck.length,
+
+firstFourCards: window.gameState.adventureDeck.slice(0, 4)
+
+};
+
+`);
+
         console.log('Adventure deck setup:', deckState);
+
     }
-
 }
-
 module.exports = BaseSeleniumTest;
